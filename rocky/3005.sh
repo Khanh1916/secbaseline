@@ -1,13 +1,9 @@
 #!/bin/bash
-output=$(findmnt -l | grep /tmp | grep nodev)
 
-echo "$output"
-
-if [[ -n "$output" ]]; then
-	    echo "PASS: /tmp is mounted with nodev"
-	        exit 0
-	else
-		    echo "FAIL: /tmp is not mounted with nodev"
-		        exit 1
+if ! findmnt -l | grep /tmp | grep -q nodev; then
+  echo "FAIL: /tmp partition nodev option is not configured"
+  exit 1
 fi
 
+echo "PASS: /tmp partition nodev option is configured"
+exit 0

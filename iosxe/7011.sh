@@ -6,7 +6,7 @@
 # Purpose: Validate SSH version 2 configuration and VTY transport input restrictions
 # Ensures secure remote access by enforcing modern SSH protocol and blocking insecure protocols
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7011.sh <config_file>
 # Example: ./7011.sh running-config.txt
@@ -58,7 +58,7 @@
 #
 # Return Codes:
 # 0 = PASS (SSH v2 configured and all VTY lines SSH-only)
-# 1 = FAILED (missing SSH v2 or insecure VTY transport configuration)
+# 1 = FAIL (missing SSH v2 or insecure VTY transport configuration)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -72,7 +72,7 @@ has_error=0
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -108,6 +108,8 @@ awk '
 # Final result evaluation
 if [ "$has_error" -eq 0 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

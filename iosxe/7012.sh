@@ -6,7 +6,7 @@
 # Purpose: Validate password security configuration and encryption settings
 # Ensures strong password policies and prevents weak password storage
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7012.sh <config_file>
 # Example: ./7012.sh running-config.txt
@@ -64,7 +64,7 @@
 #
 # Return Codes:
 # 0 = PASS (all password security requirements met)
-# 1 = FAILED (missing required settings or insecure password configuration)
+# 1 = FAIL (missing required settings or insecure password configuration)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -77,7 +77,7 @@ config_file="$1"
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -106,6 +106,8 @@ fi
 # Final result evaluation
 if [ "$has_error" -eq 0 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

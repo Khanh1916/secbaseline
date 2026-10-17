@@ -6,7 +6,7 @@
 # Purpose: Validate archive configuration backup settings for disaster recovery
 # Ensures automated configuration backup and change management capabilities
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7015.sh <config_file>
 # Example: ./7015.sh running-config.txt
@@ -67,7 +67,7 @@
 #
 # Return Codes:
 # 0 = PASS (complete archive configuration with all required components)
-# 1 = FAILED (missing archive block or incomplete configuration)
+# 1 = FAIL (missing archive block or incomplete configuration)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -100,7 +100,8 @@ END {
   if (has_path && has_wm && has_tp) {
     print "PASS";
   } else {
-    print "FAILED";
+    print "FAIL";
+    exit 1;
   }
 }
 ' "$config_file"

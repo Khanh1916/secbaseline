@@ -19,7 +19,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration has auto-save backup configured
-# 1 - FAILED: Configuration does not have auto-save backup
+# 1 - FAIL: Configuration does not have auto-save backup
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -66,9 +66,9 @@ check_backup_config() {
 # Main validation logic
 check_backup_config
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: No configuration commit auto-save found"
+    # echo "FAIL: No configuration commit auto-save found"
     exit 1
 fi
 

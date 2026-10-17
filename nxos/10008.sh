@@ -31,7 +31,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Centralized authentication properly configured
-# 1 - FAILED: Missing or incorrect centralized authentication
+# 1 - FAIL: Missing or incorrect centralized authentication
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -159,7 +159,7 @@ fi
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

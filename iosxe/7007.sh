@@ -6,7 +6,7 @@
 # Purpose: Validate authentication configuration on Cisco IOS-XE devices
 # Ensures proper access control and security compliance
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7007.sh <config_file>
 # Example: ./7007.sh running-config.txt
@@ -19,7 +19,7 @@
 # Validation Logic:
 # 1. Priority Check - AAA Authentication (Preferred Method):
 #    - Requires both: "aaa new-model" AND "aaa authentication login default local"
-#    - If both present → PASS immediately (highest security)
+#    - If both present -> PASS immediately (highest security)
 #
 # 2. Fallback Check - Line Authentication (Legacy Method):
 #    - Validates line console (con) and line auxiliary (aux) blocks
@@ -27,8 +27,8 @@
 #      * password <password> OR
 #      * login local OR  
 #      * login authentication <method>
-#    - If line blocks exist without authentication → FAILED
-#    - If no line blocks configured → PASS (not applicable)
+#    - If line blocks exist without authentication -> FAIL
+#    - If no line blocks configured -> PASS (not applicable)
 #
 # Security Compliance:
 # - Prevents unauthorized device access via console/auxiliary ports
@@ -37,7 +37,7 @@
 #
 # Return Codes:
 # 0 = PASS (authentication properly configured)
-# 1 = FAILED (missing or incomplete authentication)
+# 1 = FAIL (missing or incomplete authentication)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -53,7 +53,7 @@ fi
 
 config_file="$1"
 
-# If both required AAA lines are present → PASS immediately
+# If both required AAA lines are present -> PASS immediately
 if grep -q "^aaa authentication login default local" "$config_file" && \
    grep -q "^aaa new-model" "$config_file"; then
   echo "PASS"
@@ -87,11 +87,11 @@ check_line_block() {
     }
 
     END {
-      # If no block found → PASS
+      # If no block found -> PASS
       if (found == 0) {
         exit 0;
       }
-      # If block exists but missing required authentication → FAIL
+      # If block exists but missing required authentication -> FAIL
       if (valid == 0) {
         exit 1;
       }
@@ -109,6 +109,8 @@ res_aux=$?
 # Aggregate results
 if [ $res_con -eq 0 ] && [ $res_aux -eq 0 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

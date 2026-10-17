@@ -6,7 +6,7 @@
 # Purpose: Validate exec-timeout configuration on console and VTY line interfaces
 # Ensures session timeout compliance for security and resource management
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7003.sh <config_file>
 # Example: ./7003.sh running-config.txt
@@ -35,8 +35,8 @@
 # Validation Logic:
 # - Scans all line con and line vty configuration blocks
 # - Each block must contain "exec-timeout 5 0" command
-# - Missing timeout in any block results in FAILED
-# - If no line blocks configured → PASS (not applicable)
+# - Missing timeout in any block results in FAIL
+# - If no line blocks configured -> PASS (not applicable)
 #
 # Compliance Standards:
 # - Follows Cisco IOS-XE security hardening best practices
@@ -45,7 +45,7 @@
 #
 # Return Codes:
 # 0 = PASS (exec-timeout properly configured on all applicable interfaces)
-# 1 = FAILED (missing or incorrect exec-timeout configuration)
+# 1 = FAIL (missing or incorrect exec-timeout configuration)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -99,6 +99,8 @@ awk '
 # Final result evaluation
 if [ $? -eq 0 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

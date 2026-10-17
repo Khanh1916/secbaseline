@@ -2,7 +2,7 @@
 
 # DESCRIPTION:
 # This script executes all 80xx.sh security validation scripts against a single configuration file
-# and reports the PASS/FAILED status for each script along with the script filename
+# and reports the PASS/FAIL status for each script along with the script filename
 #
 # USAGE:
 # ./junos_run_all.sh <config_file>
@@ -11,7 +11,7 @@
 # config_file  - Junos configuration file (required)
 #
 # EXIT CODES:
-# 0 - All scripts executed successfully (regardless of individual PASS/FAILED results)
+# 0 - All scripts executed successfully (regardless of individual PASS/FAIL results)
 # 1 - Error in script execution or missing config file
 
 CONFIG_FILE="$1"
@@ -99,8 +99,8 @@ run_script() {
     if [[ "$result" == "PASS" ]]; then
         echo -e "${GREEN}$script_name: PASS${NC}"
         passed_scripts=$((passed_scripts + 1))
-    elif [[ "$result" == "FAILED" ]]; then
-        echo -e "${RED}$script_name: FAILED${NC}"
+    elif [[ "$result" == "FAIL" ]]; then
+        echo -e "${RED}$script_name: FAIL${NC}"
         failed_scripts=$((failed_scripts + 1))
     else
         echo -e "${YELLOW}$script_name: SKIPPED (unexpected output: '$result')${NC}"
@@ -147,7 +147,7 @@ fi
 if [[ $failed_scripts -eq 0 && $passed_scripts -gt 0 ]]; then
     echo -e "${GREEN}Overall: PASS - All executed scripts passed${NC}"
 elif [[ $failed_scripts -gt 0 ]]; then
-    echo -e "${RED}Overall: FAILED - $failed_scripts script(s) failed${NC}"
+    echo -e "${RED}Overall: FAIL - $failed_scripts script(s) failed${NC}"
 else
     echo -e "${YELLOW}Overall: NO RESULTS - No scripts executed successfully${NC}"
 fi

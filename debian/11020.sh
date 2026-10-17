@@ -2,9 +2,9 @@
 core_limit=$(ulimit -c)
 
 if [ "$core_limit" = "0" ]; then
-	echo "pass: Core dump đã bị giới hạn (ulimit -c = 0)."
+	echo "PASS: Core dumps are restricted (ulimit -c = 0)"
 	exit 0
 else
-	echo "fail: Core dump chưa bị giới hạn (ulimit -c = $core_limit)."
+	echo "FAIL: Core dumps are not restricted (ulimit -c = $core_limit)"
 	exit 1
 fi

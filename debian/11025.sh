@@ -1,16 +1,16 @@
 #!/bin/bash
 if ! command -v getenforce &>/dev/null; then
-	echo "fail: Lệnh 'getenforce' không tồn tại. Có thể SELinux chưa được cài đặt."
+	echo "FAIL: Command 'getenforce' not found; SELinux may not be installed"
 	exit 1
 fi
 
 selinux_mode=$(getenforce)
 
 if [[ "$selinux_mode" == "Enforcing" || "$selinux_mode" == "Permissive" ]]; then
-	echo "pass: SELinux đang ở chế độ $selinux_mode."
+	echo "PASS: SELinux is in $selinux_mode mode"
 	exit 0
 else
-	echo "fail: SELinux đang ở chế độ $selinux_mode."
+	echo "FAIL: SELinux is in $selinux_mode mode"
 	exit 1
 fi
 

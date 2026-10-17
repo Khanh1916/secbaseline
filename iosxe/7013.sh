@@ -6,7 +6,7 @@
 # Purpose: Validate centralized logging configuration for security monitoring and compliance
 # Ensures proper log forwarding to configured SIEM servers for audit and analysis
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7013.sh <config_file>
 # Example: ./7013.sh running-config.txt
@@ -35,7 +35,7 @@
 #
 # Return Codes:
 # 0 = PASS (centralized logging to at least one SIEM server configured)
-# 1 = FAILED (missing logging host configuration for configured SIEM servers)
+# 1 = FAIL (missing logging host configuration for configured SIEM servers)
 # 2 = Invalid input or file access error
 
 # SIEM SERVERS CONFIGURATION
@@ -62,18 +62,19 @@ show_usage() {
 
 # Check input parameter and file existence
 if [[ -z "$config_file" ]]; then
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
     show_usage >&2
     exit 1
 fi
 
 if [[ ! -f "$config_file" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 if [[ ! -r "$config_file" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -149,6 +150,8 @@ check_all_siem_logging() {
 # Execute main check
 if check_all_siem_logging; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

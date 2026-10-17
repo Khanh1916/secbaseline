@@ -2,10 +2,10 @@
 samba_status=$(dpkg -s samba 2>&1)
 
 if echo "$samba_status" | grep -q "Status: install ok installed"; then
-	echo "fail: Gói samba đang được cài đặt."
+	echo "FAIL: Package samba is installed"
 	exit 1
 else
-	echo "pass: Gói samba không được cài đặt." 	
+	echo "PASS: Package samba is not installed"
 	exit 0
 fi
 

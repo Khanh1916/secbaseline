@@ -1,10 +1,10 @@
 #!/bin/bash
 
 if [ "$(sysctl -n net.ipv4.conf.all.rp_filter)" != "1" ]; then
-  echo "net.ipv4.conf.all.rp_filter is not enabled."
+  echo "FAIL: net.ipv4.conf.all.rp_filter is not enabled"
   exit 1
 fi
 
-echo "RFC Source Route Validation (RP-Filter) is configured."
+echo "PASS: RFC Source Route Validation (RP-Filter) is configured"
 exit 0
 

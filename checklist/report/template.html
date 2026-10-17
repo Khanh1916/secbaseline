@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compliance report · {{.Subject}}</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #e3e6ea;
+  --pass: #1a7f37; --pass-bg: #dcf5e3; --fail: #c62828; --fail-bg: #fde4e4;
+  --error: #9a6700; --error-bg: #fff3c4; --accent: #2f5bd3; --code: #f1f3f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115; --card: #171a21; --text: #e6e8eb; --muted: #9aa3ad; --line: #2a2f38;
+    --pass: #4cc26a; --pass-bg: #163322; --fail: #ff6b6b; --fail-bg: #3a1a1c;
+    --error: #e3b341; --error-bg: #3a2f12; --accent: #7aa2ff; --code: #1f232b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+header h1 { margin: 0 0 4px; font-size: 24px; }
+header .sub { color: var(--muted); }
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px 24px; margin: 16px 0 24px; color: var(--muted); }
+.meta b { color: var(--text); font-weight: 600; }
+.summary { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; margin-bottom: 24px; }
+.score { width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--pass) calc({{.Summary.Score}} * 1%), var(--fail-bg) 0); }
+.score div { width: 108px; height: 108px; border-radius: 50%; background: var(--card); display: grid; place-items: center; text-align: center; }
+.score strong { font-size: 26px; display: block; }
+.score span { color: var(--muted); font-size: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; flex: 1; min-width: 260px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.tile .n { font-size: 26px; font-weight: 700; }
+.tile .l { color: var(--muted); }
+.tile.pass .n { color: var(--pass); } .tile.fail .n { color: var(--fail); } .tile.error .n { color: var(--error); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+.filters button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px; padding: 4px 14px; cursor: pointer; font: inherit; }
+.filters button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+section.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+section.card h2 { margin: 0; padding: 12px 16px; font-size: 15px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; }
+section.card h2 small { color: var(--muted); font-weight: 400; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 10px 16px; border-top: 1px solid var(--line); vertical-align: top; }
+tr:first-child td { border-top: 0; }
+td.status { width: 72px; } td.id { width: 72px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; min-width: 52px; text-align: center; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 700; }
+.pill.pass { color: var(--pass); background: var(--pass-bg); }
+.pill.fail { color: var(--fail); background: var(--fail-bg); }
+.pill.error { color: var(--error); background: var(--error-bg); }
+.pill.ok { color: var(--pass); background: var(--pass-bg); }
+.pill.skipped { color: var(--muted); background: var(--code); }
+.ctitle { font-weight: 600; }
+.msg { color: var(--muted); }
+.key { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+details { margin-top: 6px; }
+summary { cursor: pointer; color: var(--accent); }
+pre { background: var(--code); border-radius: 6px; padding: 10px 12px; margin: 6px 0 0; overflow-x: auto; white-space: pre-wrap; word-break: break-word;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+body.only-fail tr.check:not(.fail), body.only-error tr.check:not(.error), body.only-pass tr.check:not(.pass) { display: none; }
+body.only-fail section.card.checks:not(.has-fail), body.only-error section.card.checks:not(.has-error), body.only-pass section.card.checks:not(.has-pass) { display: none; }
+footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
+footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
+@media (max-width: 640px) { td.id { display: none; } td { padding: 10px 12px; } }
+@media print { .filters { display: none; } details { display: block; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Security compliance report</h1>
+  <div class="sub">{{.Platform.Name}} · {{.Subject}}</div>
+</header>
+
+<div class="meta">
+  {{if .Target}}<div>Device <b>{{if .Target.DeviceHostname}}{{.Target.DeviceHostname}}{{else}}unknown{{end}}</b></div>
+  <div>Configuration <b>{{.Target.ConfigFile}}</b></div>{{else}}<div>Host <b>{{.Host.Hostname}}</b></div>
+  <div>OS <b>{{if .Host.Platform}}{{.Host.Platform}} {{.Host.PlatformVersion}}{{else}}{{.Host.OS}}{{end}}</b></div>{{end}}
+  <div>Started <b>{{when .StartedAt}}</b></div>
+  <div>Duration <b>{{duration .DurationMS}}</b></div>
+</div>
+
+<div class="summary">
+  <div class="score"><div><div><strong>{{.Summary.Score}}%</strong><span>compliant</span></div></div></div>
+  <div class="tiles">
+    <div class="tile"><div class="n">{{.Summary.Total}}</div><div class="l">Checks</div></div>
+    <div class="tile pass"><div class="n">{{.Summary.Pass}}</div><div class="l">Passed</div></div>
+    <div class="tile fail"><div class="n">{{.Summary.Fail}}</div><div class="l">Failed</div></div>
+    <div class="tile error"><div class="n">{{.Summary.Error}}</div><div class="l">Errors</div></div>
+  </div>
+</div>
+
+<div class="filters" role="group" aria-label="Filter checks">
+  <button type="button" data-filter="" aria-pressed="true">All</button>
+  <button type="button" data-filter="fail" aria-pressed="false">Failed</button>
+  <button type="button" data-filter="error" aria-pressed="false">Errors</button>
+  <button type="button" data-filter="pass" aria-pressed="false">Passed</button>
+</div>
+
+{{range .Sections}}
+<section class="card checks{{if .Fail}} has-fail{{end}}{{if .Error}} has-error{{end}}{{if .Pass}} has-pass{{end}}">
+  <h2><span>{{section .Name}}</span><small>{{len .Checks}} check{{if ne (len .Checks) 1}}s{{end}}{{if .Fail}} · {{.Fail}} failed{{end}}{{if .Error}} · {{.Error}} errors{{end}}</small></h2>
+  <table>
+  {{range .Checks}}
+    <tr class="check {{.Status}}">
+      <td class="status"><span class="pill {{.Status}}">{{upper .Status}}</span></td>
+      <td class="id">{{.ID}}</td>
+      <td>
+        <div class="ctitle">{{.Title}}</div>
+        {{if .Message}}<div class="msg">{{.Message}}</div>{{end}}
+        {{if .Error}}<div class="msg">{{.Error}}</div>{{end}}
+        <div class="key">{{.Key}}</div>
+        {{if or .Details .Output .Stderr}}
+        <details><summary>Details</summary>
+          {{if .Details}}<pre>{{range .Details}}{{.}}
+{{end}}</pre>{{end}}
+          {{if .Output}}<pre>{{.Output}}</pre>{{end}}
+          {{if .Stderr}}<pre>{{.Stderr}}</pre>{{end}}
+        </details>
+        {{end}}
+      </td>
+    </tr>
+  {{end}}
+  </table>
+</section>
+{{end}}
+
+{{if .Collectors}}
+<section class="card">
+  <h2><span>Inventory</span><small>{{len .Collectors}} collectors</small></h2>
+  <table>
+  {{range .Collectors}}
+    <tr>
+      <td class="status"><span class="pill {{.Status}}">{{upper .Status}}</span></td>
+      <td class="id">{{.ID}}</td>
+      <td>
+        <div class="ctitle">{{.Title}}</div>
+        {{if .Error}}<div class="msg">{{.Error}}</div>{{end}}
+        <div class="key">{{.Key}}</div>
+        {{if .Output}}<details><summary>Output</summary><pre>{{.Output}}</pre></details>{{end}}
+      </td>
+    </tr>
+  {{end}}
+  </table>
+</section>
+{{end}}
+
+<footer>
+  Generated by {{.Tool.Name}} {{.Tool.Version}} · report schema v{{.SchemaVersion}}{{if .Target}} · config sha256 {{.Target.SHA256}}{{end}}
+</footer>
+</main>
+<script>
+document.querySelectorAll('.filters button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.filters button').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+    document.body.className = b.dataset.filter ? 'only-' + b.dataset.filter : '';
+  });
+});
+</script>
+</body>
+</html>

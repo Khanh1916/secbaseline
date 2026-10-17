@@ -7,7 +7,7 @@
 # VALIDATION CRITERIA:
 # - Configuration must contain a "banner login" statement
 # - Banner login must have actual content between delimiters
-# - Returns PASS for compliant configurations, FAILED otherwise
+# - Returns PASS for compliant configurations, FAIL otherwise
 #
 # USAGE:
 # ./9002.sh <config_file>
@@ -18,7 +18,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets banner login requirements
-# 1 - FAILED: Configuration does not meet requirements
+# 1 - FAIL: Configuration does not meet requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -42,7 +42,7 @@ fi
 
 # Check if banner login exists
 if ! grep -qi "^[[:space:]]*banner[[:space:]]\+login[[:space:]]" "$CONFIG_FILE"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 

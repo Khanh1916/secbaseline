@@ -25,7 +25,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: All line sections have exec-timeout 5
-# 1 - FAILED: Missing or incorrect exec-timeout configuration
+# 1 - FAIL: Missing or incorrect exec-timeout configuration
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -127,7 +127,7 @@ fi
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

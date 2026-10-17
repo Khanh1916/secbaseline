@@ -48,7 +48,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets security requirements (services disabled)
-# 1 - FAILED: Configuration has enabled forbidden services
+# 1 - FAIL: Configuration has enabled forbidden services
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -236,9 +236,9 @@ if [ ${#failed_issues[@]} -eq 0 ]; then
     echo "PASS"
     exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below lines for detailed debugging:
-    # echo "FAILED: ${#failed_issues[@]} security issues found:"
+    # echo "FAIL: ${#failed_issues[@]} security issues found:"
     # for issue in "${failed_issues[@]}"; do
     #     echo "  - $issue"
     # done

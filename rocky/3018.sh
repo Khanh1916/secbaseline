@@ -1,13 +1,9 @@
 #!/bin/bash
-output=$(find / -type d -perm -0002 ! -perm -1000 2>/dev/null)
 
-echo "$output"
-
-if [[ -z "$output" ]]; then
-	    echo "PASS: No world-writable directories without sticky bit"
-	        exit 0
-	else
-		    echo "FAIL: The following world-writable directories lack sticky bit:"
-		        echo "$output"
-			    exit 1
+if find / -type d -perm -0002 -a ! -perm -1000 2>/dev/null | grep -q .; then
+  echo "FAIL: World-writable directories without sticky bit found"
+  exit 1
 fi
+
+echo "PASS: All world-writable directories have sticky bit set"
+exit 0

@@ -6,9 +6,9 @@ pureftpd_status=$(dpkg -s pure-ftpd 2>&1)
 if echo "$vsftpd_status" | grep -q "Status: install ok installed" || \
 	echo "$proftpd_status" | grep -q "Status: install ok installed" || \
 	echo "$pureftpd_status" | grep -q "Status: install ok installed"; then
-	echo "fail: Một trong các gói FTP server đang được cài đặt."
+	echo "FAIL: An FTP server package is installed"
 	exit 1
 else
-	echo "pass: Các gói FTP server phổ biến không được cài đặt."
+	echo "PASS: No common FTP server package is installed"
 	exit 0
 fi

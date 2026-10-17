@@ -6,7 +6,7 @@
 #
 # VALIDATION CRITERIA:
 # - SSH feature must be enabled (not disabled with "no feature ssh")
-# - Returns PASS if SSH is enabled, FAILED if disabled
+# - Returns PASS if SSH is enabled, FAIL if disabled
 #
 # USAGE:
 # ./10011.sh <config_file>
@@ -22,7 +22,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: SSH is properly enabled
-# 1 - FAILED: SSH is disabled
+# 1 - FAIL: SSH is disabled
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -67,7 +67,7 @@ fi
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

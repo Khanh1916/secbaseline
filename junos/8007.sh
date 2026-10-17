@@ -28,7 +28,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: All three security configurations are present
-# 1 - FAILED: Missing one or more required security configurations
+# 1 - FAIL: Missing one or more required security configurations
 
 # Check Junos configuration for console and aux ports
 # PASS if all 3 security configurations are present:
@@ -42,7 +42,7 @@ if [ $# -ne 1 ]; then
 fi
 
 CONFIG="$1"
-[ ! -f "$CONFIG" ] && echo "FAILED" && exit 1
+[ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
 REQUIRED_RULES=(
     "set system ports console log-out-on-disconnect"
@@ -52,9 +52,10 @@ REQUIRED_RULES=(
 
 for rule in "${REQUIRED_RULES[@]}"; do
     if ! grep -qF "$rule" "$CONFIG"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
 done
 
 echo "PASS"
+exit 0

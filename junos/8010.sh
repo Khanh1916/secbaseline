@@ -51,7 +51,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: SNMP configuration meets security requirements
-# 1 - FAILED: SNMP configuration does not meet security requirements
+# 1 - FAIL: SNMP configuration does not meet security requirements
 
 # SNMP Configuration Security Checker
 # Check SNMP configuration according to security standards
@@ -60,7 +60,7 @@ CONFIG_FILE="$1"
 
 # Check if config file is provided
 if [[ -z "$CONFIG_FILE" || ! -f "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -150,22 +150,28 @@ if [[ "$SNMP_VERSION" == "v3" ]]; then
         # Mixed environment - check both
         if check_snmpv2 && check_snmpv3; then
             echo "PASS"
+            exit 0
         else
-            echo "FAILED"
+            echo "FAIL"
+            exit 1
         fi
     else
         # v3 only
         if check_snmpv3; then
             echo "PASS"
+            exit 0
         else
-            echo "FAILED"
+            echo "FAIL"
+            exit 1
         fi
     fi
 else
     # v2 only
     if check_snmpv2; then
         echo "PASS"
+        exit 0
     else
-        echo "FAILED"
+        echo "FAIL"
+        exit 1
     fi
 fi

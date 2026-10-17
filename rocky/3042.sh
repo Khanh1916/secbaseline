@@ -1,15 +1,9 @@
 #!/bin/bash
-output_httpd=$(rpm -q httpd)
-output_nginx=$(rpm -q nginx)
 
-echo "$output_httpd"
-echo "$output_nginx"
-
-if [[ "$output_httpd" == "package httpd is not installed" && "$output_nginx" == "package nginx is not installed" ]]; then
-	    echo "PASS: httpd and nginx are not installed"
-	        exit 0
-	else
-		    echo "FAIL: httpd or nginx is installed"
-		        exit 1
+if rpm -q httpd &> /dev/null || rpm -q nginx &> /dev/null; then
+  echo "FAIL: HTTP server packages (apache2, nginx) are installed"
+  exit 1
 fi
 
+echo "PASS: HTTP server packages (apache2, nginx) are not installed"
+exit 0

@@ -14,20 +14,22 @@ for f in "${FILES[@]}"; do
   [ -f "$f" ] || continue
   if grep -q "pam_faillock.so" "$f"; then
     found=1
-    echo "File: $f"
+    echo "INFO: File: $f"
     grep "pam_faillock.so" "$f" | while read -r line; do
       deny=$(echo "$line" | grep -oE "deny=[0-9]+" | cut -d= -f2)
       if [ -n "$deny" ]; then
-        echo "  → deny=$deny"
+        echo "INFO: - deny=$deny"
       else
-        echo "  → deny not set in line: $line"
+        echo "INFO: - deny not set in line: $line"
       fi
     done
-    echo
   fi
 done
 
 if [ $found -eq 0 ]; then
-  echo "No pam_faillock.so configuration found."
+  echo "FAIL: No pam_faillock.so configuration found"
   exit 1
 fi
+
+echo "PASS: Account lockout (deny) is configured in PAM"
+exit 0

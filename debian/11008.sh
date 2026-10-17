@@ -1,13 +1,13 @@
 #!/bin/bash
 output=$(df -h /dev/shm 2>&1)
 if echo "$output" | grep -q "No such file or directory"; then
-	echo "fail: /dev/shm không tồn tại hoặc chưa được cấu hình."
+	echo "FAIL: /dev/shm does not exist or is not configured"
 	exit 1
 fi
 if echo "$output" | grep -E "^(/|tmpfs)" > /dev/null; then
-	echo "pass: /dev/shm là một filesystem riêng biệt."
+	echo "PASS: /dev/shm is a separate filesystem"
 	exit 0
 else
-	echo "fail: /dev/shm không phải là một filesystem riêng biệt."
+	echo "FAIL: /dev/shm is not a separate filesystem"
 	exit 1
 fi

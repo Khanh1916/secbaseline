@@ -36,7 +36,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: All unnecessary services are properly disabled
-# 1 - FAILED: One or more services are enabled
+# 1 - FAIL: One or more services are enabled
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -146,7 +146,7 @@ esac
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

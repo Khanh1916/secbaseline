@@ -4,9 +4,9 @@ nginx_status=$(dpkg -s nginx 2>&1)
 
 if echo "$apache_status" | grep -q "Status: install ok installed" || \
 	echo "$nginx_status" | grep -q "Status: install ok installed"; then
-	echo "fail: Một trong các gói HTTP server đang được cài đặt."
+	echo "FAIL: An HTTP server package is installed"
 	exit 1
 else
-	echo "pass: Các gói HTTP server phổ biến không được cài đặt."
+	echo "PASS: No common HTTP server package is installed"
 	exit 0
 fi

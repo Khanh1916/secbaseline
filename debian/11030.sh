@@ -14,11 +14,11 @@ for file in "${files[@]}"; do
 		continue
 	fi
 	if grep -iq -e "${os_keywords[0]}" -e "${os_keywords[1]}" -e "${os_keywords[2]}" -e "${os_keywords[3]}" -e "${os_keywords[4]}" -e "${os_keywords[5]}" -e "${os_keywords[6]}" -e "${os_keywords[7]}" -e "${os_keywords[8]}" "$file"; then
-		echo "fail: File $file chứa thông tin hệ điều hành chi tiết."
+		echo "FAIL: File $file contains detailed OS information"
 		exit 1
 	fi
 done
 
-echo "pass: Các file banner không chứa thông tin phiên bản hệ điều hành chi tiết."
+echo "PASS: Banner files do not contain detailed OS version information"
 exit 0
 

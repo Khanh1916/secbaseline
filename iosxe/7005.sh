@@ -6,7 +6,7 @@
 # Purpose: Validate security configuration by checking forbidden and required services
 # Ensures compliance with network security best practices and hardening guidelines
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7005.sh <config_file>
 # Example: ./7005.sh running-config.txt
@@ -38,7 +38,7 @@
 #
 # Return Codes:
 # 0 = PASS (all security requirements met)
-# 1 = FAILED (forbidden services found or required settings missing)
+# 1 = FAIL (forbidden services found or required settings missing)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -51,7 +51,7 @@ has_error=0
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -83,6 +83,8 @@ done
 # Final result evaluation
 if [ "$has_error" -eq 0 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

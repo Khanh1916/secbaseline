@@ -31,7 +31,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: VTY access control properly configured
-# 1 - FAILED: Missing or incorrect VTY access control
+# 1 - FAIL: Missing or incorrect VTY access control
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -147,27 +147,27 @@ vty_access_class=$(get_vty_access_class)
 
 # Check if we found access-class
 if [ "$vty_access_class" = "VTY_SECTION_NOT_FOUND" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 elif [ "$vty_access_class" = "ACCESS_CLASS_NOT_FOUND" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Check if corresponding access-list exists
 acl_exists=$(check_access_list_exists "$vty_access_class")
 if [ "$acl_exists" != "ACL_EXISTS" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Check access-list rules for permit any
 acl_rules_check=$(check_access_list_rules "$vty_access_class")
 if [ "$acl_rules_check" = "PERMIT_ANY_FOUND" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 elif [ "$acl_rules_check" = "ACL_SECTION_NOT_FOUND" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 

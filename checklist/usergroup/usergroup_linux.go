@@ -142,12 +142,12 @@ func getGroupsWithSudoPrivileges() (map[string]struct{}, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		// Bỏ qua comment
+		// Skip comments
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		// Tìm dòng bắt đầu bằng %groupname
+		// Find lines starting with %groupname
 		if strings.HasPrefix(line, "%") {
 			fields := strings.Fields(line)
 			if len(fields) >= 2 && strings.Contains(fields[1], "ALL") {

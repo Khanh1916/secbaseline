@@ -6,7 +6,7 @@
 #
 # VALIDATION CRITERIA:
 # - Must have "aaa authentication rejected ..." configuration if AAA is configured
-# - Returns PASS if AAA auth rejected is configured, FAILED if not configured
+# - Returns PASS if AAA auth rejected is configured, FAIL if not configured
 #
 # USAGE:
 # ./10014.sh <config_file>
@@ -21,7 +21,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: AAA authentication rejected is properly configured
-# 1 - FAILED: AAA authentication rejected is not configured
+# 1 - FAIL: AAA authentication rejected is not configured
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -66,7 +66,7 @@ fi
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

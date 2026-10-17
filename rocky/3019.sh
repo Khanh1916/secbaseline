@@ -1,12 +1,9 @@
 #!/bin/bash
-output=$(rpm -q aide)
 
-echo "$output"
-
-if [[ "$output" == aide* ]]; then
-	    echo "PASS: aide is installed"
-	        exit 0
-	else
-		    echo "FAIL: aide is not installed"
-		        exit 1
+if rpm -q aide &> /dev/null; then
+  echo "PASS: AIDE is installed"
+  exit 0
 fi
+
+echo "FAIL: AIDE is not installed"
+exit 1

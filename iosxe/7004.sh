@@ -6,7 +6,7 @@
 # Purpose: Validate VTY line access control lists configuration and implementation
 # Ensures remote access security through proper ACL assignment and definition
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7004.sh <config_file>
 # Example: ./7004.sh running-config.txt
@@ -36,7 +36,7 @@
 # Validation Process:
 # 1. Extract all ACL names from line vty access-class commands
 # 2. Verify each referenced ACL is properly defined
-# 3. FAILED if any VTY lacks access-class or ACL undefined
+# 3. FAIL if any VTY lacks access-class or ACL undefined
 # 4. PASS only when all VTY lines have valid ACL references
 #
 # Common Failure Scenarios:
@@ -51,7 +51,7 @@
 #
 # Return Codes:
 # 0 = PASS (all VTY lines properly secured with valid ACLs)
-# 1 = FAILED (missing access-class or undefined ACL references)
+# 1 = FAIL (missing access-class or undefined ACL references)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -107,7 +107,7 @@ acl_names=$(awk '
 
 # If no access-class found then FAIL
 if [ -z "$acl_names" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -123,6 +123,8 @@ done <<< "$acl_names"
 # Final result evaluation
 if [ "$missing" -eq 0 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

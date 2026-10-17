@@ -22,7 +22,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Authentication properly configured for AUX and Console
-# 1 - FAILED: Authentication disabled for AUX or Console
+# 1 - FAIL: Authentication disabled for AUX or Console
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -66,7 +66,7 @@ fi
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     ## Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

@@ -6,7 +6,7 @@
 # Purpose: Validate AAA authentication login attempt limitation configuration
 # Ensures protection against brute force authentication attacks
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7014.sh <config_file>
 # Example: ./7014.sh running-config.txt
@@ -59,7 +59,7 @@
 #
 # Return Codes:
 # 0 = PASS (AAA authentication attempts properly configured)
-# 1 = FAILED (missing authentication attempts limitation)
+# 1 = FAIL (missing authentication attempts limitation)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -72,13 +72,15 @@ config_file="$1"
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
 # Check for AAA authentication attempts login configuration
 if grep -Eq "^\s*aaa authentication attempts login\s+" "$config_file"; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

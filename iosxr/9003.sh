@@ -12,7 +12,7 @@
 # - Configuration must contain "line default" with "exec-timeout 5 0"
 # - All exec-timeout configurations must be exactly "exec-timeout 5 0"
 # - Checks exec-timeout in any context (line console, line default, interface, etc.)
-# - Returns PASS for compliant configurations, FAILED otherwise
+# - Returns PASS for compliant configurations, FAIL otherwise
 #
 # USAGE:
 # ./9003.sh <config_file>
@@ -31,7 +31,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets exec-timeout requirements
-# 1 - FAILED: Configuration does not meet requirements
+# 1 - FAIL: Configuration does not meet requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -55,7 +55,7 @@ fi
 
 # Check if any exec-timeout exists
 if ! grep -qi "exec-timeout" "$CONFIG_FILE"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -88,14 +88,14 @@ done < "$CONFIG_FILE"
 
 # Check if line default has exec-timeout 5 0
 if [ "$EXEC_TIMEOUT_AFTER_DEFAULT" = false ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # All exec-timeout must be exactly "exec-timeout 5 0"
 while IFS= read -r line; do
     if ! echo "$line" | grep -qi "exec-timeout[[:space:]]\+5[[:space:]]\+0"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
 done < <(grep -i "exec-timeout" "$CONFIG_FILE")

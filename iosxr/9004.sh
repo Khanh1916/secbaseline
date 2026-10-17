@@ -67,7 +67,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets access control requirements
-# 1 - FAILED: Configuration does not meet requirements
+# 1 - FAIL: Configuration does not meet requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -137,7 +137,7 @@ check_complete_access_lists() {
         
         # Check for dangerous permit statements
         if echo "$acl_rules" | grep -qi "permit[[:space:]]\+\(ipv[46]\|tcp\|ip\)[[:space:]]\+any[[:space:]]\+any"; then
-            echo "FAILED"
+            echo "FAIL"
             exit 1
         fi
     done
@@ -149,7 +149,7 @@ check_complete_access_lists() {
 check_mpp_mandatory() {
     # Check for standalone allow SERVICE lines (forbidden)
     if grep -qi "^[[:space:]]*allow[[:space:]]\+\(HTTP\|NETCONF\|SNMP\|SSH\|TFTP\|Telnet\|XML\|all\)[[:space:]]*$" "$CONFIG_FILE"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
@@ -159,28 +159,28 @@ check_mpp_mandatory() {
     
     # MPP block must exist when access-lists are incomplete
     if [ -z "$mpp_content" ]; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
     # Check for forbidden addresses in MPP block
     if echo "$mpp_content" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv6[[:space:]]\+::[[:space:]]*$"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
     if echo "$mpp_content" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv6[[:space:]]\+::/0"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
     if echo "$mpp_content" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv4[[:space:]]\+0\.0\.0\.0/0"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
     if echo "$mpp_content" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv4[[:space:]]\+0\.0\.0\.0[[:space:]]*$"; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
@@ -207,7 +207,7 @@ check_mpp_mandatory() {
         
         # If we have non-default VRFs but no out-of-band section, FAIL
         if [ "$has_non_default_vrf" = true ] && [ "$has_out_of_band" = false ]; then
-            echo "FAILED"
+            echo "FAIL"
             exit 1
         fi
         
@@ -224,17 +224,17 @@ check_mpp_mandatory() {
                                  head -n -1)
                     
                     if [ -z "$vrf_content" ]; then
-                        echo "FAILED"
+                        echo "FAIL"
                         exit 1
                     fi
                 else
-                    echo "FAILED"
+                    echo "FAIL"
                     exit 1
                 fi
             else
                 # Non-default VRF uses out-of-band section
                 if [ "$has_out_of_band" = false ]; then
-                    echo "FAILED"
+                    echo "FAIL"
                     exit 1
                 fi
                 
@@ -244,7 +244,7 @@ check_mpp_mandatory() {
                              head -n -1)
                 
                 if [ -z "$vrf_content" ]; then
-                    echo "FAILED"
+                    echo "FAIL"
                     exit 1
                 fi
             fi
@@ -271,7 +271,7 @@ check_mpp_mandatory() {
             if [ "$has_ssh_server" = true ]; then
                 if ! echo "$vrf_content" | grep -qi "allow[[:space:]]\+SSH[[:space:]]\+peer" && \
                    ! echo "$vrf_content" | grep -qi "allow.*SSH.*peer"; then
-                    echo "FAILED"
+                    echo "FAIL"
                     exit 1
                 fi
             fi
@@ -279,7 +279,7 @@ check_mpp_mandatory() {
             if [ "$has_netconf_server" = true ]; then
                 if ! echo "$vrf_content" | grep -qi "allow[[:space:]]\+NETCONF[[:space:]]\+peer" && \
                    ! echo "$vrf_content" | grep -qi "allow.*NETCONF.*peer"; then
-                    echo "FAILED"
+                    echo "FAIL"
                     exit 1
                 fi
             fi
@@ -300,16 +300,16 @@ if ! grep -qi "ssh server.*vrf\|ssh server netconf.*vrf" "$CONFIG_FILE"; then
     if [ -n "$mpp_exists" ]; then
         # Basic MPP validation
         if echo "$mpp_exists" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv6[[:space:]]\+::[[:space:]]*$"; then
-            echo "FAILED"
+            echo "FAIL"
             exit 1
         elif echo "$mpp_exists" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv6[[:space:]]\+::/0"; then
-            echo "FAILED"
+            echo "FAIL"
             exit 1
         elif echo "$mpp_exists" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv4[[:space:]]\+0\.0\.0\.0/0"; then
-            echo "FAILED"
+            echo "FAIL"
             exit 1
         elif echo "$mpp_exists" | grep -qi "[[:space:]]\+address[[:space:]]\+ipv4[[:space:]]\+0\.0\.0\.0[[:space:]]*$"; then
-            echo "FAILED"
+            echo "FAIL"
             exit 1
         fi
     fi

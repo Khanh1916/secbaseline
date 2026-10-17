@@ -1,9 +1,9 @@
 #!/bin/bash
 
 if systemctl is-enabled avahi-daemon &> /dev/null; then
-  echo "avahi-daemon is enabled."
+  echo "FAIL: avahi-daemon is enabled"
   exit 1
 fi
 
-echo "avahi-daemon is disabled or not found."
+echo "PASS: avahi-daemon is disabled or not found"
 exit 0

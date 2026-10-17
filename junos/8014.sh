@@ -50,7 +50,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Protection against brute-force password guessing with backoff-factor, backoff-threshold, lockout-period, tries-before-disconnect
-# 1 - FAILED: Missing one or more retry options parameters
+# 1 - FAIL: Missing one or more retry options parameters
 
 CONFIG_FILE="$1"
 
@@ -74,19 +74,19 @@ CONFIG_FILE="$1"
 
 # Validate input parameters
 if [[ -z "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     # show_usage >&2
     exit 1
 fi
 
 # Check if config file exists and is readable
 if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 if [[ ! -r "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -156,6 +156,8 @@ check_retry_options() {
 # Execute main check
 if check_retry_options; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

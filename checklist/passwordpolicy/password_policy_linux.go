@@ -76,7 +76,7 @@ func getPAMPolicy() ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		// Bỏ qua comment và dòng rỗng
+		// Skip comments and blank lines
 		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
 			continue
 		}

@@ -43,7 +43,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: At least one archive site configured, one of two trigger mechanisms configured (transfer on commit or transfer interval)
-# 1 - FAILED: Missing backup configuration or trigger mechanism
+# 1 - FAIL: Missing backup configuration or trigger mechanism
 
 CONFIG_FILE="$1"
 
@@ -74,19 +74,19 @@ CONFIG_FILE="$1"
 
 # Validate input parameters
 if [[ -z "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     # show_usage >&2
     exit 1
 fi
 
 # Check if config file exists and is readable
 if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 if [[ ! -r "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -148,6 +148,8 @@ check_backup_config() {
 # Execute main check
 if check_backup_config; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

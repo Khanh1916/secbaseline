@@ -28,7 +28,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: All idle timeout configurations are properly set to 5 minutes
-# 1 - FAILED: Missing or incorrect idle timeout configuration
+# 1 - FAIL: Missing or incorrect idle timeout configuration
 
 # Check input arguments
 if [ $# -ne 1 ]; then
@@ -53,12 +53,12 @@ for class in $classes; do
     timeout_line=$(grep "set system login class $class idle-timeout" "$CONFIG_FILE")
 
     if [[ -z "$timeout_line" ]]; then
-        status="FAILED"
+        status="FAIL"
         break
     else
         value=$(echo "$timeout_line" | awk '{print $NF}')
         if [[ "$value" -ne 5 ]]; then
-            status="FAILED"
+            status="FAIL"
             break
         fi
     fi
@@ -68,8 +68,10 @@ done
 default_idle=$(grep -E "^set system login idle-timeout[ ]+5$" "$CONFIG_FILE")
 
 if [[ -z "$default_idle" ]]; then
-    status="FAILED"
+    status="FAIL"
 fi
 
 # Print final result
 echo "$status"
+[ "$status" = "PASS" ] && exit 0
+exit 1

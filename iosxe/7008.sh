@@ -6,7 +6,7 @@
 # Purpose: Validate AAA remote authentication configuration for VTY access
 # Ensures proper RADIUS/TACACS+ authentication setup and VTY line compliance
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7008.sh <config_file>
 # Example: ./7008.sh running-config.txt
@@ -19,7 +19,7 @@
 # Validation Logic:
 # 
 # 1. AAA Model Check:
-#    - If "aaa new-model" not configured → PASS (AAA not in use)
+#    - If "aaa new-model" not configured -> PASS (AAA not in use)
 #    - AAA disabled means legacy authentication acceptable
 #
 # 2. Remote Authentication Method Detection:
@@ -46,7 +46,7 @@
 #
 # Return Codes:
 # 0 = PASS (AAA remote authentication properly configured)
-# 1 = FAILED (missing or inconsistent AAA configuration)
+# 1 = FAIL (missing or inconsistent AAA configuration)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -59,7 +59,7 @@ config_file="$1"
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -73,7 +73,7 @@ fi
 method=$(grep -E '^aaa authentication login [^ ]+ group (radius|tacacs\+)' "$config_file" | awk '{print $4}')
 
 if [ -z "$method" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -103,7 +103,7 @@ awk -v method="$method" '
     if (in_block && block ~ ("login authentication " method)) found++;
 
     if (found == 0) {
-      print "FAILED";
+      print "FAIL";
       exit 1;
     } else {
       print "PASS";

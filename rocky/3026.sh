@@ -1,14 +1,9 @@
 #!/bin/bash
-output=$(sestatus | grep "Current mode")
 
-echo "$output"
-
-mode=$(echo "$output" | awk '{print $3}')
-
-if [[ "$mode" == "enforcing" ]]; then
-	    echo "PASS: SELinux current mode is enforcing"
-	        exit 0
-	else
-		    echo "FAIL: SELinux current mode is not enforcing"
-		        exit 1
+if ! sestatus | grep "Current mode" | grep -q "enforcing"; then
+  echo "FAIL: SELinux is not in enforcing mode"
+  exit 1
 fi
+
+echo "PASS: SELinux is in enforcing mode"
+exit 0

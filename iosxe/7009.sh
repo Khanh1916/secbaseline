@@ -6,7 +6,7 @@
 # Purpose: Validate NTP server and timezone configuration for accurate time synchronization
 # Ensures proper time management for logging, security, and network operations
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7009.sh <config_file>
 # Example: ./7009.sh running-config.txt
@@ -30,7 +30,7 @@
 #
 # 3. Dual Requirement Validation:
 #    - Both NTP server AND timezone must be configured
-#    - Missing either configuration results in FAILED
+#    - Missing either configuration results in FAIL
 #    - PASS only when both requirements are satisfied
 #
 # Security and Operational Benefits:
@@ -54,7 +54,7 @@
 #
 # Return Codes:
 # 0 = PASS (both NTP server and timezone properly configured)
-# 1 = FAILED (missing NTP server or incorrect timezone configuration)
+# 1 = FAIL (missing NTP server or incorrect timezone configuration)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -67,7 +67,7 @@ config_file="$1"
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -78,6 +78,8 @@ tz_ok=$(grep -qE '^clock timezone\s+\S+\s+7(\s|$)' "$config_file" && echo 1 || e
 # Final result evaluation
 if [ "$ntp_ok" -eq 1 ] && [ "$tz_ok" -eq 1 ]; then
   echo "PASS"
+  exit 0
 else
-  echo "FAILED"
+  echo "FAIL"
+  exit 1
 fi

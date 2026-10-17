@@ -6,7 +6,7 @@
 # Purpose: Validate SNMP community string and access control configuration
 # Ensures secure SNMP monitoring with proper access restrictions and host authentication
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./7010.sh <config_file>
 # Example: ./7010.sh running-config.txt
@@ -55,7 +55,7 @@
 #
 # Return Codes:
 # 0 = PASS (SNMP properly secured with ACL and consistent community strings)
-# 1 = FAILED (missing configuration or security violations)
+# 1 = FAIL (missing configuration or security violations)
 # 2 = Invalid input or file access error
 #
 # Technical Notes:
@@ -68,7 +68,7 @@ config_file="$1"
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
@@ -76,22 +76,23 @@ fi
 acl_name=$(grep -E '^snmp-server community [^ ]+ RO [^ ]+' "$config_file" | awk '{print $5}' | head -n1)
 community=$(grep -E '^snmp-server community [^ ]+ RO [^ ]+' "$config_file" | awk '{print $3}' | head -n1)
 
-# If either ACL name or community string is missing → FAILED
+# If either ACL name or community string is missing -> FAIL
 if [ -z "$acl_name" ] || [ -z "$community" ]; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
 # Check that the referenced access-list exists
 if ! grep -qE "^ip access-list [^ ]+ $acl_name" "$config_file"; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
 # Check that snmp-server host uses the same community string
 if ! grep -qE "snmp-server host .* $community(\s|$)" "$config_file"; then
-  echo "FAILED"
+  echo "FAIL"
   exit 1
 fi
 
 echo "PASS"
+exit 0

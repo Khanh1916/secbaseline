@@ -5,7 +5,7 @@
 # 
 # Purpose: Check if banner login is configured
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./banner_check.sh <config_file>
 # Example: ./banner_check.sh running-config.txt
@@ -16,7 +16,7 @@
 #
 # Return Codes:
 # 0 = PASS (banner login configured)
-# 1 = FAILED (no banner login found)
+# 1 = FAIL (no banner login found)
 
 # Function to validate banner login configuration
 check_banner_login() {
@@ -27,7 +27,7 @@ check_banner_login() {
     
     # Check if banner login line exists
     if [ -z "$banner_line" ]; then
-        echo "FAILED"
+        echo "FAIL"
         return 1
     else
         echo "PASS"
@@ -39,7 +39,7 @@ check_banner_login() {
 main() {
     # Validate input parameter
     if [ $# -ne 1 ]; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
@@ -47,7 +47,7 @@ main() {
     
     # Check if file exists and is readable
     if [ ! -f "$config_file" ] || [ ! -r "$config_file" ]; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     

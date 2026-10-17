@@ -35,10 +35,10 @@
 #
 # EXIT CODES:
 # 0 - PASS: Firewall filter with source allow, accept and discard rules for corresponding open services, applied on interface
-# 1 - FAILED: Missing or incorrect firewall filter configuration
+# 1 - FAIL: Missing or incorrect firewall filter configuration
 
 # Check Junos config: services opened must be protected by firewall filter with discard rules
-# Output only PASS or FAILED
+# Output only PASS or FAIL
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <junos_config_file>"
@@ -46,7 +46,7 @@ if [ $# -ne 1 ]; then
 fi
 
 CONFIG="$1"
-[ ! -f "$CONFIG" ] && echo "FAILED" && exit 1
+[ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
 # === Default ports ===
 declare -A default_ports=(
@@ -74,7 +74,7 @@ while IFS= read -r line; do
     done
 done < "$CONFIG"
 
-# No services → PASS
+# No services -> PASS
 if [ ${#service_ports[@]} -eq 0 ]; then
     echo "PASS"
     exit 0
@@ -83,7 +83,7 @@ fi
 # === Applied filters ===
 applied_filters=$(grep -E "set interfaces .* family inet filter input" "$CONFIG" \
                   | awk '{print $NF}' | sort -u)
-[ -z "$applied_filters" ] && echo "FAILED" && exit 1
+[ -z "$applied_filters" ] && echo "FAIL" && exit 1
 
 # === Function: check if port is covered ===
 port_in_rule() {
@@ -120,13 +120,15 @@ for svc in "${!service_ports[@]}"; do
             done
         fi
     done
-    $port_protected || { echo "FAILED"; exit 0; }
+    $port_protected || { echo "FAIL"; exit 0; }
 done
 
 # Check allow rule
 if grep -qE "set firewall .*filter .* from source" "$CONFIG" \
    && grep -qE "set firewall .*filter .* then accept" "$CONFIG"; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

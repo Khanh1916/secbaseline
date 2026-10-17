@@ -1,10 +1,10 @@
 #!/bin/bash
 
 if rpm -q ypbind &> /dev/null; then
-  echo "NIS Client is available."
+  echo "FAIL: NIS Client is available"
   exit 1
 fi
 
-echo "NIS Client is removed."
+echo "PASS: NIS Client is removed"
 exit 0
 

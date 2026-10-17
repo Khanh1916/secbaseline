@@ -5,16 +5,16 @@ $privilege_output = Get-Content $temp_file -ErrorAction SilentlyContinue | Selec
 Remove-Item $temp_file -Force -ErrorAction SilentlyContinue
 
 if (-not $privilege_output) {
-    Write-Output "SeTcbPrivilege is not definded or not found."
+    Write-Output "FAIL: SeTcbPrivilege is not defined or not found"
     exit 1
 }
 
 $privilege_value = ($privilege_output -split '=')[1].Trim()
 
 if ($privilege_value) {
-    Write-Output "SeTcbPrivilege is assigned to users or groups (not No One)."
+    Write-Output "FAIL: SeTcbPrivilege is assigned to users or groups (not No One)"
     exit 1
 }
 
-Write-Output "SeTcbPrivilege is assigned to No One."
+Write-Output "PASS: SeTcbPrivilege is assigned to No One"
 exit 0

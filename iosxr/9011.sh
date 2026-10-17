@@ -24,7 +24,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets SSH security requirements
-# 1 - FAILED: Configuration does not meet security requirements
+# 1 - FAIL: Configuration does not meet security requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -108,18 +108,18 @@ check_line_transport() {
 # Step 1: Check SSH server version
 check_ssh_server_version
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Missing 'ssh server v2' or forbidden 'ssh server v1' found"
+    # echo "FAIL: Missing 'ssh server v2' or forbidden 'ssh server v1' found"
     exit 1
 fi
 
 # Step 2: Check line transport configurations
 check_line_transport
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Line count does not match transport input ssh count"
+    # echo "FAIL: Line count does not match transport input ssh count"
     exit 1
 fi
 

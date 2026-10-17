@@ -23,7 +23,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration has logging to at least one specified SIEM server
-# 1 - FAILED: Configuration does not have logging to any SIEM server
+# 1 - FAIL: Configuration does not have logging to any SIEM server
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -99,7 +99,7 @@ check_siem_logging() {
 # Main validation logic
 check_siem_logging
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 

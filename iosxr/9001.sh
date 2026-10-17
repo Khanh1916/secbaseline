@@ -7,7 +7,7 @@
 # VALIDATION CRITERIA:
 # - Configuration must contain a "hostname" statement
 # - Hostname must not be a default value (Router/Switch/router/switch/ios/iosxr)
-# - Returns PASS for compliant configurations, FAILED otherwise
+# - Returns PASS for compliant configurations, FAIL otherwise
 #
 # USAGE:
 # ./9001.sh <config_file>
@@ -18,7 +18,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets hostname requirements
-# 1 - FAILED: Configuration does not meet requirements
+# 1 - FAIL: Configuration does not meet requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -45,13 +45,13 @@ HOSTNAME=$(grep -i "^[[:space:]]*hostname[[:space:]]" "$CONFIG_FILE" | awk '{pri
 
 # Check if hostname exists
 if [ -z "$HOSTNAME" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Check against forbidden values (case-insensitive)
 if grep -qi "^[[:space:]]*hostname[[:space:]]\+\(router\|switch\|ios\|iosxr\)[[:space:]]*$" "$CONFIG_FILE"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 

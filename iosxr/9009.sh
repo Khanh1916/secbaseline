@@ -26,7 +26,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets timezone and NTP requirements
-# 1 - FAILED: Configuration does not meet requirements
+# 1 - FAIL: Configuration does not meet requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -121,9 +121,9 @@ check_timezone_config
 TIMEZONE_RESULT=$?
 
 if [ "$TIMEZONE_RESULT" -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Clock timezone configuration missing or incorrect"
+    # echo "FAIL: Clock timezone configuration missing or incorrect"
     # echo "Required: clock timezone areaname Asia/Saigon"
     exit 1
 fi
@@ -133,9 +133,9 @@ check_ntp_config
 NTP_RESULT=$?
 
 if [ "$NTP_RESULT" -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: NTP server and source configuration missing or incorrect"
+    # echo "FAIL: NTP server and source configuration missing or incorrect"
     # echo "Required: ntp block with server and source configurations"
     exit 1
 fi

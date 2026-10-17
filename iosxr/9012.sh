@@ -16,7 +16,7 @@
 # - Must have "password6 encryption aes" for AES password storage encryption
 #
 # FORBIDDEN CONFIGURATIONS:
-# - No "password 7" (Vigenère cipher) in any user configuration
+# - No "password 7" (Vigenere cipher) in any user configuration
 #
 # USAGE:
 # ./9012.sh <config_file>
@@ -27,7 +27,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets password security requirements
-# 1 - FAILED: Configuration does not meet security requirements
+# 1 - FAIL: Configuration does not meet security requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -106,7 +106,7 @@ check_username_secret_blocks() {
 
 # Function to check for forbidden password type 7
 check_no_password_type7() {
-    # Check for any password 7 configurations (Vigenère cipher)
+    # Check for any password 7 configurations (Vigenere cipher)
     if grep -q "^[[:space:]]\+password[[:space:]]\+7[[:space:]]\+" "$CONFIG_FILE"; then
         return 1
     fi
@@ -222,45 +222,45 @@ check_aes_encryption() {
 # Step 1: Check username blocks and their secrets
 check_username_secret_blocks
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Some username blocks missing secret or no users found"
+    # echo "FAIL: Some username blocks missing secret or no users found"
     exit 1
 fi
 
 # Step 2: Check for forbidden password type 7
 check_no_password_type7
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Found forbidden password type 7 (Vigenère cipher)"
+    # echo "FAIL: Found forbidden password type 7 (Vigenere cipher)"
     exit 1
 fi
 
 # Step 3: Check password policy requirements and get valid policy
 check_password_policy
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Password policy does not meet strong password requirements"
+    # echo "FAIL: Password policy does not meet strong password requirements"
     exit 1
 fi
 
 # Step 4: Check username policy configuration
 check_username_policy
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Some users not using the valid password policy"
+    # echo "FAIL: Some users not using the valid password policy"
     exit 1
 fi
 
 # Step 5: Check AES encryption
 check_aes_encryption
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: AES password encryption not configured"
+    # echo "FAIL: AES password encryption not configured"
     exit 1
 fi
 

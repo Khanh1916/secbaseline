@@ -11,9 +11,9 @@ is_installed() {
 }
 
 if is_not_installed "$xserver_output" && is_not_installed "$xorg_output"; then
-	echo "pass: Các gói xserver-common và xorg không được cài đặt."
+	echo "PASS: Packages xserver-common and xorg are not installed"
 	exit 0
 else
-	echo "fail: Một trong hai gói xserver-common hoặc xorg đang được cài đặt."
+	echo "FAIL: Package xserver-common or xorg is installed"
 	exit 1
 fi

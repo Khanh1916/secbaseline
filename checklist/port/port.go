@@ -2,7 +2,6 @@ package port
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"slices"
 	"strings"
@@ -24,7 +23,7 @@ func socketTypeToString(t uint32) string {
 func GetPorts() (string, error) {
 	conns, err := gopsutilnet.Connections("inet")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	ports := make([]string, 0)

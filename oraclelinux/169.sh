@@ -2,14 +2,14 @@
 
 # Check if firewall rules exist for all open ports
 if ! command -v firewall-cmd &> /dev/null; then
-  echo "Missing rules or open ports not protected."
+  echo "FAIL: Missing rules or open ports not protected"
   exit 1
 fi
 
 # Get firewall rules
 firewall_rules=$(firewall-cmd --list-all 2>/dev/null)
 if [ $? -ne 0 ]; then
-  echo "Missing rules or open ports not protected."
+  echo "FAIL: Missing rules or open ports not protected"
   exit 1
 fi
 
@@ -27,15 +27,15 @@ for port in $open_ports; do
   
   # Check if port is in firewall rules
   if ! echo "$firewall_rules" | grep -q "$port"; then
-    echo "Port $port is open but not in firewall rules."
+    echo "INFO: Port $port is open but not in firewall rules"
     missing_rules=true
   fi
 done
 
 if [ "$missing_rules" = true ]; then
-  echo "Missing rules or open ports not protected."
+  echo "FAIL: Missing rules or open ports not protected"
   exit 1
 fi
 
-echo "Rules match open ports."
+echo "PASS: Rules match open ports"
 exit 0

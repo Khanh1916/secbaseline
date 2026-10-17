@@ -61,7 +61,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: No security-risk services are enabled
-# 1 - FAILED: One or more security-risk services are enabled
+# 1 - FAIL: One or more security-risk services are enabled
 
 # Check Junos services that should be disabled to reduce security risks
 # Returns PASS if all are disabled
@@ -72,7 +72,7 @@ if [ $# -ne 1 ]; then
 fi
 
 CONFIG="$1"
-[ ! -f "$CONFIG" ] && echo "FAILED" && exit 1
+[ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
 # List of services that should be disabled
 services_to_disable=(
@@ -106,7 +106,9 @@ for svc in "${services_to_disable[@]}"; do
 done
 
 if $found; then
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 else
     echo "PASS"
+    exit 0
 fi

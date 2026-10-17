@@ -24,11 +24,11 @@
 #
 # EXIT CODES:
 # 0 - PASS: Login announcement is properly configured
-# 1 - FAILED: Login announcement is missing or not configured
+# 1 - FAIL: Login announcement is missing or not configured
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -36,7 +36,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -44,6 +44,8 @@ fi
 # Matches: set system login announcement "quoted message" or set system login announcement unquoted-text
 if grep -Eq 'set[[:space:]]+system[[:space:]]+login[[:space:]]+announcement[[:space:]]+("[^"]+"|\S+)' "$CONFIG_FILE"; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

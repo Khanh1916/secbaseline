@@ -63,13 +63,13 @@
 #
 # EXIT CODES:
 # 0 - PASS: All user accounts have encrypted passwords, root has strong password protection, minimum 10 character length, character requirements, strong encryption sha256/sha512/sha1, brute-force protection
-# 1 - FAILED: Security compliance error or file error
+# 1 - FAIL: Security compliance error or file error
 
 CONFIG_FILE="$1"
 
 # Check if config file is provided
 if [[ -z "$CONFIG_FILE" || ! -f "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -184,6 +184,8 @@ check_password_config() {
 # Main check logic
 if check_password_config; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

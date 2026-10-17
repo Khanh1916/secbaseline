@@ -1,13 +1,13 @@
 #!/bin/bash
 mount_info=$(mount | grep " on /tmp ")
 if [ -z "$mount_info" ]; then
-	echo "fail: /tmp chưa được mount hoặc không tồn tại."
+	echo "FAIL: /tmp is not mounted or does not exist"
 	exit 1
 fi
 if echo "$mount_info" | grep -q "nodev"; then
-	echo "pass: /tmp đã được mount với tùy chọn nodev."
+	echo "PASS: /tmp is mounted with the nodev option"
 	exit 0
 else
-	echo "fail: /tmp chưa được mount với tùy chọn nodev."
+	echo "FAIL: /tmp is not mounted with the nodev option"
 	exit 1
 fi

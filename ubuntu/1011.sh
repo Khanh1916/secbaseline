@@ -1,13 +1,13 @@
 #!/bin/bash
 mount_info=$(mount | grep " on /dev/shm ")
 if [ -z "$mount_info" ]; then
-	echo "fail: /dev/shm chưa được mount hoặc không tồn tại."
+	echo "FAIL: /dev/shm is not mounted or does not exist"
 	exit 1
 fi
 if echo "$mount_info" | grep -q "noexec"; then
-	 echo "pass: /dev/shm đã được mount với tùy chọn noexec."
+	 echo "PASS: /dev/shm is mounted with the noexec option"
 	 exit 0
     else
-	 echo "fail: /dev/shm chưa được mount với tùy chọn noexec."
+	 echo "FAIL: /dev/shm is not mounted with the noexec option"
 	 exit 1
 fi

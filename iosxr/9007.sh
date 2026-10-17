@@ -20,7 +20,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: All line configurations have proper authentication
-# 1 - FAILED: Some line configurations missing authentication
+# 1 - FAIL: Some line configurations missing authentication
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -112,9 +112,9 @@ check_line_authentication() {
 # Main validation logic
 check_line_authentication
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Some line configurations missing secret or login authentication"
+    # echo "FAIL: Some line configurations missing secret or login authentication"
     exit 1
 fi
 

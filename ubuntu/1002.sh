@@ -1,13 +1,13 @@
 #!/bin/bash
 if lsmod | grep -qw squashfs; then
-	  echo "squashfs module is loaded."
+	  echo "FAIL: squashfs module is loaded"
 	    exit 1
 fi
 
 if modinfo squashfs &> /dev/null; then
-	  echo "squashfs module is available."
+	  echo "FAIL: squashfs module is available"
 	    exit 1
 fi
 
-echo "squashfs module is not present."
+echo "PASS: squashfs module is not present"
 exit 0

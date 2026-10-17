@@ -49,7 +49,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Must have syslog host configuration with corresponding IP and port for specified SIEM, logging level any of info/notice/warning/error/critical/alert/emergency
-# 1 - FAILED: Missing or incorrect logging configuration
+# 1 - FAIL: Missing or incorrect logging configuration
 
 SIEM_SERVERS=(
     "192.168.1.100:514"
@@ -113,7 +113,7 @@ check_siem_logging() {
 # Main validation logic
 check_siem_logging
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 

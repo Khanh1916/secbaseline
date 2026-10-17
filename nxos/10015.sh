@@ -28,7 +28,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Backup scheduler is properly configured
-# 1 - FAILED: Backup scheduler is not properly configured
+# 1 - FAIL: Backup scheduler is not properly configured
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -243,7 +243,7 @@ if [ "$scheduler_feature_status" != "SCHEDULER_ENABLED" ]; then
     failure_reasons+=("Feature scheduler is not enabled")
     
     # Output results immediately for fail-fast
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -301,7 +301,7 @@ fi
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 else
     echo "PASS"

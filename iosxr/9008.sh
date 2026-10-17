@@ -56,7 +56,7 @@
 # !
 # vty-pool default 0 4 line-template default
 #
-# # Example 2: FAILED - Template missing login authentication
+# # Example 2: FAIL - Template missing login authentication
 # line template VTY-TEMP
 #  password 7 08021D5D0A16544541
 # !
@@ -76,7 +76,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets requirements
-# 1 - FAILED: Configuration does not meet requirements
+# 1 - FAIL: Configuration does not meet requirements
 # 2 - ERROR: File not found or invalid arguments
 
 # Check arguments
@@ -110,7 +110,7 @@ step1_check_servers_groups() {
     
     # Must have at least one
     if [ "$has_servers" = false ] && [ "$has_groups" = false ]; then
-        return 1  # FAILED - no servers or groups found
+        return 1  # FAIL - no servers or groups found
     fi
     
     return 0  # Found servers or groups
@@ -366,7 +366,7 @@ step4_validate_template_auth() {
 
 # Step 1: Check AAA servers/groups exist
 if ! step1_check_servers_groups; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -379,7 +379,7 @@ HAS_TACACS=$(echo "$SERVER_TYPES" | cut -d' ' -f2)
 # Step 2: Get line authentication values (strict validation)
 LINE_AUTH=$(step2_get_line_auth)
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -389,19 +389,19 @@ LINE_DEFAULT_AUTH=$(echo "$LINE_AUTH" | cut -d' ' -f2)  # line default auth
 # Step 3: Get VTY pool-template pairs (strict validation)
 VTY_PAIRS=$(step3_get_vty_pairs)
 if [ -z "$VTY_PAIRS" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Validate all templates used by vty-pools
 if ! validate_vty_templates "$VTY_PAIRS"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Step 4: Template Authentication Validation
 if ! step4_validate_template_auth "$VTY_PAIRS" "$CONSOLE_AUTH" "$LINE_DEFAULT_AUTH" "$AAA_GROUPS" "$HAS_RADIUS" "$HAS_TACACS"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 

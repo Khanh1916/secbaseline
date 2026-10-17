@@ -1,15 +1,32 @@
-# Catalog of Linux host controls and collectors.
+# Catalog of every check and collector in this repository.
 #
-# Each control maps to one script per distro: <platform>/<id>.sh (exit 0 = pass, 1 = fail).
-# Each collector maps to an ID of the Go binary: checklist/checklist <id> [args].
+# - platforms: where each platform's scripts live and how they are run.
+# - controls:  one entry per control; `ids` maps platform -> script ID, the script being
+#              <platform>/<id>.sh (or .ps1 on Windows).
+# - collectors: inventory collectors built into the Go binary (checklist <id>).
 #
-# IDs are listed explicitly because they do not line up by index across families:
+# IDs are explicit because they do not line up by index across platform families:
 # Ubuntu/Debian have no separate NIS client control, so from linux.clients.rsh_removed
-# onward their IDs are one lower than the RHEL-family index.
-# Oracle Linux collectors are omitted: checklist/main.go defines no Oracle range
-# (only an unassigned 1-10 set).
+# onward their IDs are one lower than the RHEL-family index. Oracle Linux has no
+# collector IDs in checklist/main.go.
+#
+# Validate after editing: checklist lint
 
 version: 1
+
+platforms:
+  ubuntu: {kind: linux, name: Ubuntu, detect: [ubuntu]}
+  debian: {kind: linux, name: Debian, detect: [debian]}
+  redhat: {kind: linux, name: Red Hat Enterprise Linux, detect: [rhel]}
+  rocky: {kind: linux, name: Rocky Linux, detect: [rocky]}
+  centos: {kind: linux, name: CentOS, detect: [centos]}
+  suse: {kind: linux, name: SUSE Linux Enterprise / openSUSE, detect: [sles, sled, opensuse, opensuse-leap]}
+  oraclelinux: {kind: linux, name: Oracle Linux, detect: [ol]}
+  windows: {kind: windows, name: Microsoft Windows}
+  iosxe: {kind: network, name: Cisco IOS XE}
+  junos: {kind: network, name: Juniper Junos}
+  iosxr: {kind: network, name: Cisco IOS XR}
+  nxos: {kind: network, name: Cisco NX-OS}
 
 controls:
   - key: linux.filesystem.cramfs_disabled
@@ -285,37 +302,157 @@ controls:
   - key: linux.auth.inactive_lock
     title: Ensure the inactive password lock (INACTIVE) is configured
     ids: {ubuntu: 1090, debian: 11090, redhat: 2091, rocky: 3091, centos: 5091, suse: 290, oraclelinux: 190}
+  - key: windows.password.min_length
+    title: Ensure minimum password length is 8 or more characters
+    ids: {windows: 4001}
+  - key: windows.password.complexity
+    title: Ensure password complexity requirements are enabled
+    ids: {windows: 4002}
+  - key: windows.password.history
+    title: Ensure password history remembers 24 or more passwords
+    ids: {windows: 4003}
+  - key: windows.password.no_reversible_encryption
+    title: Ensure passwords are not stored using reversible encryption
+    ids: {windows: 4004}
+  - key: windows.lockout.duration
+    title: Ensure account lockout duration is 15 minutes or more
+    ids: {windows: 4005}
+  - key: windows.lockout.threshold
+    title: Ensure account lockout threshold is between 1 and 5 attempts
+    ids: {windows: 4006}
+  - key: windows.rights.act_as_os
+    title: "Ensure 'Act as part of the operating system' is assigned to No One"
+    ids: {windows: 4007}
+  - key: windows.banner.legal_notice
+    title: Ensure a logon legal notice title and text are configured
+    ids: {windows: 4008}
+  - key: windows.accounts.guest_disabled
+    title: Ensure the Guest account is disabled
+    ids: {windows: 4009}
+  - key: windows.audit.application_group_management
+    title: "Ensure 'Application Group Management' auditing includes Success"
+    ids: {windows: 4010}
+  - key: windows.audit.computer_account_management
+    title: "Ensure 'Computer Account Management' auditing includes Success"
+    ids: {windows: 4011}
+  - key: windows.audit.distribution_group_management
+    title: "Ensure 'Distribution Group Management' auditing includes Success"
+    ids: {windows: 4012}
+  - key: windows.audit.other_account_management_events
+    title: "Ensure 'Other Account Management Events' auditing includes Success"
+    ids: {windows: 4013}
+  - key: windows.audit.security_group_management
+    title: "Ensure 'Security Group Management' auditing includes Success"
+    ids: {windows: 4014}
+  - key: windows.audit.process_creation
+    title: "Ensure 'Process Creation' auditing includes Success"
+    ids: {windows: 4015}
+  - key: windows.audit.directory_service_access
+    title: "Ensure 'Directory Service Access' auditing includes Success"
+    ids: {windows: 4016}
+  - key: windows.audit.directory_service_changes
+    title: "Ensure 'Directory Service Changes' auditing includes Success"
+    ids: {windows: 4017}
+  - key: windows.audit.account_lockout
+    title: "Ensure 'Account Lockout' auditing includes Success"
+    ids: {windows: 4018}
+  - key: windows.audit.logoff
+    title: "Ensure 'Logoff' auditing includes Success"
+    ids: {windows: 4019}
+  - key: windows.audit.other_logon_logoff_events
+    title: "Ensure 'Other Logon/Logoff Events' auditing includes Success"
+    ids: {windows: 4020}
+  - key: windows.audit.special_logon
+    title: "Ensure 'Special Logon' auditing includes Success"
+    ids: {windows: 4021}
+  - key: windows.audit.audit_policy_change
+    title: "Ensure 'Audit Policy Change' auditing includes Success"
+    ids: {windows: 4022}
+  - key: windows.audit.authentication_policy_change
+    title: "Ensure 'Authentication Policy Change' auditing includes Success"
+    ids: {windows: 4023}
+  - key: windows.audit.sensitive_privilege_use
+    title: "Ensure 'Sensitive Privilege Use' auditing includes Success"
+    ids: {windows: 4024}
+  - key: windows.defender.realtime_protection
+    title: Ensure antivirus real-time protection is enabled
+    ids: {windows: 4025}
+  - key: windows.backup.policy
+    title: Ensure a Windows Server Backup policy is configured
+    ids: {windows: 4026}
+  - key: network.hostname
+    title: Ensure a non-default hostname is configured
+    ids: {iosxe: 7001, junos: 8001, iosxr: 9001, nxos: 10001}
+  - key: network.login_banner
+    title: Ensure a login banner is configured
+    ids: {iosxe: 7002, junos: 8002, iosxr: 9002, nxos: 10002}
+  - key: network.exec_timeout
+    title: Ensure an idle session (exec) timeout is configured
+    ids: {iosxe: 7003, junos: 8003, iosxr: 9003, nxos: 10003}
+  - key: network.mgmt_access_acl
+    title: Ensure management access is restricted to permitted addresses
+    ids: {iosxe: 7004, junos: 8004, iosxr: 9004, nxos: 10004}
+  - key: network.unused_services_disabled
+    title: Ensure unused services and protocols are disabled
+    ids: {iosxe: 7005, junos: 8005, iosxr: 9005, nxos: 10005}
+  - key: network.console_auth
+    title: Ensure console and auxiliary lines require authentication
+    ids: {iosxe: 7007, junos: 8007, iosxr: 9007, nxos: 10007}
+  - key: network.aaa_central_auth
+    title: Ensure centralized AAA authentication (TACACS+/RADIUS) is configured
+    ids: {iosxe: 7008, junos: 8008, iosxr: 9008, nxos: 10008}
+  - key: network.ntp_timezone
+    title: Ensure time zone and NTP synchronization are configured
+    ids: {iosxe: 7009, junos: 8009, iosxr: 9009, nxos: 10009}
+  - key: network.snmp_secured
+    title: Ensure SNMP is secured
+    ids: {iosxe: 7010, junos: 8010, iosxr: 9010, nxos: 10010}
+  - key: network.ssh_remote_access
+    title: Ensure SSH version 2 is used for remote access
+    ids: {iosxe: 7011, junos: 8011, iosxr: 9011, nxos: 10011}
+  - key: network.password_encryption
+    title: Ensure strong password encryption and policy are configured
+    ids: {iosxe: 7012, junos: 8012, iosxr: 9012, nxos: 10012}
+  - key: network.central_logging
+    title: Ensure logs are sent to central syslog/SIEM servers
+    ids: {iosxe: 7013, junos: 8013, iosxr: 9013, nxos: 10013}
+  - key: network.login_attempts_limited
+    title: Ensure failed login attempts are limited
+    ids: {iosxe: 7014, junos: 8014, iosxr: 9014, nxos: 10014}
+  - key: network.config_backup
+    title: Ensure automatic configuration backup is configured
+    ids: {iosxe: 7015, junos: 8015, iosxr: 9015, nxos: 10015}
 
 collectors:
-  - key: linux.collect.ssh_keys
+  - key: collect.ssh_keys
     title: SSH authorized_keys per user
-    ids: {ubuntu: 1091, debian: 11091, redhat: 2092, rocky: 3092, centos: 5092, suse: 291}
-  - key: linux.collect.accounts
+    ids: {ubuntu: 1091, debian: 11091, redhat: 2092, rocky: 3092, centos: 5092, suse: 291, windows: 4027}
+  - key: collect.accounts
     title: Local account names
-    ids: {ubuntu: 1092, debian: 11092, redhat: 2093, rocky: 3093, centos: 5093, suse: 292}
-  - key: linux.collect.users_groups
-    title: Users, groups and sudoers entries
-    ids: {ubuntu: 1093, debian: 11093, redhat: 2094, rocky: 3094, centos: 5094, suse: 293}
-  - key: linux.collect.password_policy
-    title: Password policy from login.defs and PAM
-    ids: {ubuntu: 1094, debian: 11094, redhat: 2095, rocky: 3095, centos: 5095, suse: 294}
-  - key: linux.collect.patching
-    title: OS and kernel version (uname -a)
-    ids: {ubuntu: 1095, debian: 11095, redhat: 2096, rocky: 3096, centos: 5096, suse: 295}
-  - key: linux.collect.file_checksums
-    title: SHA-256 checksums of the given files
-    args: "-F <file,...>"
-    ids: {ubuntu: 1096, debian: 11096, redhat: 2097, rocky: 3097, centos: 5097, suse: 296}
-  - key: linux.collect.file_listing
-    title: Files in the given directories
-    args: "-f <dir,...>"
-    ids: {ubuntu: 1097, debian: 11097, redhat: 2098, rocky: 3098, centos: 5098, suse: 297}
-  - key: linux.collect.listening_ports
+    ids: {ubuntu: 1092, debian: 11092, redhat: 2093, rocky: 3093, centos: 5093, suse: 292, windows: 4028}
+  - key: collect.users_groups
+    title: Users, groups and sudoers/administrators membership
+    ids: {ubuntu: 1093, debian: 11093, redhat: 2094, rocky: 3094, centos: 5094, suse: 293, windows: 4029}
+  - key: collect.password_policy
+    title: Effective password policy
+    ids: {ubuntu: 1094, debian: 11094, redhat: 2095, rocky: 3095, centos: 5095, suse: 294, windows: 4030}
+  - key: collect.patching
+    title: OS, kernel and patch level
+    ids: {ubuntu: 1095, debian: 11095, redhat: 2096, rocky: 3096, centos: 5096, suse: 295, windows: 4031}
+  - key: collect.file_checksums
+    title: SHA-256 checksums of the files given with --files
+    needs: files
+    ids: {ubuntu: 1096, debian: 11096, redhat: 2097, rocky: 3097, centos: 5097, suse: 296, windows: 4032}
+  - key: collect.file_listing
+    title: Files in the directories given with --folders
+    needs: folders
+    ids: {ubuntu: 1097, debian: 11097, redhat: 2098, rocky: 3098, centos: 5098, suse: 297, windows: 4033}
+  - key: collect.listening_ports
     title: Non-loopback listening TCP/UDP ports
-    ids: {ubuntu: 1098, debian: 11098, redhat: 2099, rocky: 3099, centos: 5099, suse: 298}
-  - key: linux.collect.firewall_rules
-    title: iptables/ip6tables rules for all tables
-    ids: {ubuntu: 1099, debian: 11099, redhat: 2100, rocky: 3100, centos: 5100, suse: 299}
-  - key: linux.collect.log_config
-    title: rsyslog configuration and logging agent status
-    ids: {ubuntu: 1100, debian: 11100, redhat: 2101, rocky: 3101, centos: 5101, suse: 300}
+    ids: {ubuntu: 1098, debian: 11098, redhat: 2099, rocky: 3099, centos: 5099, suse: 298, windows: 4034}
+  - key: collect.firewall_rules
+    title: Host firewall rules
+    ids: {ubuntu: 1099, debian: 11099, redhat: 2100, rocky: 3100, centos: 5100, suse: 299, windows: 4035}
+  - key: collect.log_config
+    title: Logging configuration and agent status
+    ids: {ubuntu: 1100, debian: 11100, redhat: 2101, rocky: 3101, centos: 5101, suse: 300, windows: 4036}

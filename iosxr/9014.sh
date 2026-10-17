@@ -22,7 +22,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration has lockout settings and all users use password policy
-# 1 - FAILED: Configuration missing lockout settings or users not using policy
+# 1 - FAIL: Configuration missing lockout settings or users not using policy
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -127,18 +127,18 @@ check_username_policy() {
 # Step 1: Check AAA lockout configuration
 check_aaa_lockout
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Missing lockout-time or authen-max-attempts in AAA password policy"
+    # echo "FAIL: Missing lockout-time or authen-max-attempts in AAA password policy"
     exit 1
 fi
 
 # Step 2: Check username policy configuration
 check_username_policy
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Some users missing password policy configuration"
+    # echo "FAIL: Some users missing password policy configuration"
     exit 1
 fi
 

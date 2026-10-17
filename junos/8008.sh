@@ -37,7 +37,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: At least one radius-server or tacplus-server configured, authentication-order set, all servers have secrets
-# 1 - FAILED: Missing server configuration, authentication order, or server secrets
+# 1 - FAIL: Missing server configuration, authentication order, or server secrets
 
 # Check RADIUS or TACACS+ authentication in Junos
 # PASS if:
@@ -51,7 +51,7 @@ if [ $# -ne 1 ]; then
 fi
 
 CONFIG="$1"
-[ ! -f "$CONFIG" ] && echo "FAILED" && exit 1
+[ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
 has_server=false
 has_auth_order=false
@@ -84,6 +84,8 @@ fi
 # === Result ===
 if $has_server && $has_auth_order && ! $missing_key; then
     echo "PASS"
+    exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 fi

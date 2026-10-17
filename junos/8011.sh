@@ -55,7 +55,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: All user accounts have encrypted passwords, root has strong password protection, minimum 10 character length, character requirements, strong encryption sha256/sha512/sha1, brute-force protection
-# 1 - FAILED: Missing or inadequate SSH/password security configuration
+# 1 - FAIL: Missing or inadequate SSH/password security configuration
 
 # SSH Configuration Security Checker
 # Check SSH configuration according to security standards
@@ -64,7 +64,7 @@ CONFIG_FILE="$1"
 
 # Check if config file is provided
 if [[ -z "$CONFIG_FILE" || ! -f "$CONFIG_FILE" ]]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -180,6 +180,6 @@ if check_ssh_config && check_password_security; then
     echo "PASS"
     exit 0
 else
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi

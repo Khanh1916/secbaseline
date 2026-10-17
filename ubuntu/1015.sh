@@ -2,16 +2,16 @@
 df_output=$(df -h /var/log/audit 2>&1)
 
 if echo "$df_output" | grep -q "No such file or directory"; then
-	  echo "fail: /var/log/audit không tồn tại hoặc không phải là filesystem riêng."
+	  echo "FAIL: /var/log/audit does not exist or is not a separate filesystem"
 	    exit 1
 fi
 
 fstab_entry=$(grep -E '^[^#].*\s/var/log/audit\s' /etc/fstab)
 
 if [ -z "$fstab_entry" ]; then
-	  echo "fail: /var/log/audit không có entry trong /etc/fstab."
+	  echo "FAIL: /var/log/audit has no entry in /etc/fstab"
 	    exit 1
 fi
 
-echo "pass: /var/log/audit là một filesystem riêng và có entry trong /etc/fstab."
+echo "PASS: /var/log/audit is a separate filesystem with an entry in /etc/fstab"
 exit 0

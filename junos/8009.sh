@@ -28,7 +28,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Has "set system time-zone Asia/Saigon" and at least one "set system ntp server"
-# 1 - FAILED: Missing time-zone Asia/Saigon or NTP server configuration
+# 1 - FAIL: Missing time-zone Asia/Saigon or NTP server configuration
 
 # Check Junos config for time-zone and NTP
 # PASS if has "set system time-zone Asia/Saigon" and at least one "set system ntp server ..."
@@ -39,18 +39,19 @@ if [ $# -ne 1 ]; then
 fi
 
 CONFIG="$1"
-[ ! -f "$CONFIG" ] && echo "FAILED" && exit 1
+[ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
 # Check time-zone
 if ! grep -qE "^set system time-zone Asia/Saigon" "$CONFIG"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Check NTP server
 if ! grep -qE "^set system ntp server " "$CONFIG"; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 echo "PASS"
+exit 0

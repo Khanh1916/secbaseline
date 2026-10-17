@@ -1,9 +1,9 @@
 #!/bin/bash
 
 if ! findmnt /tmp &> /dev/null; then
- echo "/tmp partition is not configured."
+ echo "FAIL: /tmp partition is not configured"
  exit 1
 fi
 
-echo "/tmp partition is configured."
+echo "PASS: /tmp partition is configured"
 exit 0

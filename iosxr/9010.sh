@@ -28,7 +28,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: Configuration meets SNMP security requirements
-# 1 - FAILED: Configuration does not meet security requirements
+# 1 - FAIL: Configuration does not meet security requirements
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -241,45 +241,45 @@ check_snmp_traps() {
 # Step 1: Check for forbidden configurations
 check_forbidden_snmp
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Forbidden SNMP keywords found (public/private/noauth/RW)"
+    # echo "FAIL: Forbidden SNMP keywords found (public/private/noauth/RW)"
     exit 1
 fi
 
 # Step 2: Check ACL configuration
 check_snmp_acl
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Missing or improper ACL configuration for SNMP"
+    # echo "FAIL: Missing or improper ACL configuration for SNMP"
     exit 1
 fi
 
 # Step 3: Check SNMPv3 security
 check_snmpv3_security
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Missing or improper SNMPv3 authentication/encryption"
+    # echo "FAIL: Missing or improper SNMPv3 authentication/encryption"
     exit 1
 fi
 
 # Step 4: Check SNMP host restrictions
 check_snmp_host
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: Missing or improper SNMP host IP restrictions"
+    # echo "FAIL: Missing or improper SNMP host IP restrictions"
     exit 1
 fi
 
 # Step 5: Check SNMP traps
 check_snmp_traps
 if [ $? -ne 0 ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Uncomment below line for detailed debugging:
-    # echo "FAILED: SNMP traps not enabled"
+    # echo "FAIL: SNMP traps not enabled"
     exit 1
 fi
 

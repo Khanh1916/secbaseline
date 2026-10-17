@@ -1,10 +1,11 @@
 #!/bin/bash
-output=$(modprobe -n -v cramfs)
 
-if [[ "$output" == "install /bin/true" ]]; then
-	echo "$output"
-	exit 0
-else
-	echo "$output"
-	exit 1
+output=$(modprobe -n -v cramfs 2>/dev/null)
+
+if echo "$output" | grep "install /bin/true"; then
+ echo "PASS: cramfs module is disabled"
+ exit 0
 fi
+
+echo "FAIL: cramfs module can be loaded"
+exit 1

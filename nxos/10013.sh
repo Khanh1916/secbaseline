@@ -7,7 +7,7 @@
 # VALIDATION CRITERIA:
 # - Must have "logging server <SIEM-IP> ... port <SIEM-PORT>" configuration
 # - SIEM IP and PORT must match the allowed list defined in script variables
-# - Returns PASS if at least one valid SIEM logging is configured, FAILED otherwise
+# - Returns PASS if at least one valid SIEM logging is configured, FAIL otherwise
 #
 # CONFIGURATION:
 # Edit the ALLOWED_SIEM_SERVERS array below to specify valid SIEM IP:PORT pairs
@@ -29,7 +29,7 @@
 #
 # EXIT CODES:
 # 0 - PASS: SIEM logging is properly configured
-# 1 - FAILED: SIEM logging is not configured
+# 1 - FAIL: SIEM logging is not configured
 # 2 - ERROR: File not found or invalid arguments
 #
 # REQUIREMENTS:
@@ -167,7 +167,7 @@ esac
 
 # Output results
 if [ "$failed" = true ]; then
-    echo "FAILED"
+    echo "FAIL"
     # Optionally output specific failure reasons (uncomment if needed)
     # for reason in "${failure_reasons[@]}"; do
     #     echo "  - $reason" >&2

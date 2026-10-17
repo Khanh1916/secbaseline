@@ -1,12 +1,12 @@
 #!/bin/bash
 output=$(df -h /tmp 2>&1)
 if echo "$output" | grep -q "No such file or directory"; then
-	echo "/tmp không tồn tại hoặc chưa được mount riêng biệt."
+	echo "FAIL: /tmp does not exist or is not a separate mount"
 	exit 1
 elif echo "$output" | grep -q "^/"; then
-	echo "/tmp là một filesystem riêng biệt."
+	echo "PASS: /tmp is a separate filesystem"
 	exit 0
 else
-	echo "/tmp không phải là một filesystem riêng biệt."
+	echo "FAIL: /tmp is not a separate filesystem"
 	exit 1
 fi

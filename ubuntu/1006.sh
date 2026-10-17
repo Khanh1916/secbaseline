@@ -1,13 +1,13 @@
 #!/bin/bash
 mount_info=$(mount | grep " on /tmp ")
 if [ -z "$mount_info" ]; then
-	echo "fail: /tmp chưa được mount hoặc không tồn tại."
+	echo "FAIL: /tmp is not mounted or does not exist"
 	exit 1
 fi
 if echo "$mount_info" | grep -q "nosuid"; then
-	echo "pass: /tmp đã được mount với tùy chọn nosuid."
+	echo "PASS: /tmp is mounted with the nosuid option"
 	exit 0
 else
-	echo "fail: /tpm chưa được mount với tùy chon nosuid"
+	echo "FAIL: /tmp is not mounted with the nosuid option"
 	exit 1
 fi

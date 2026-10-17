@@ -21,11 +21,11 @@
 # set system host-name ROUTER-01
 # set system domain-name company.com
 #
-# # Example 2: FAILED - Default hostname (unconfigured)
+# # Example 2: FAIL - Default hostname (unconfigured)
 # set system host-name Amnesiac
 # set system domain-name company.com
 #
-# # Example 3: FAILED - Missing hostname configuration
+# # Example 3: FAIL - Missing hostname configuration
 # set system domain-name company.com
 #
 # USAGE:
@@ -33,11 +33,11 @@
 #
 # EXIT CODES:
 # 0 - PASS: Hostname is properly configured
-# 1 - FAILED: Hostname is not configured or set to default "Amnesiac"
+# 1 - FAIL: Hostname is not configured or set to default "Amnesiac"
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
@@ -45,23 +45,25 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 # Find hostname line
 hostname_line=$(grep "^set system host-name" "$CONFIG_FILE")
 
-# If no hostname line exists → FAILED
+# If no hostname line exists -> FAIL
 if [ -z "$hostname_line" ]; then
-    echo "FAILED"
+    echo "FAIL"
     exit 1
 fi
 
 hostname=$(echo "$hostname_line" | awk '{print $4}')
 
 if [[ "$hostname" == "Amnesiac" ]]; then
-    echo "FAILED"
+    echo "FAIL"
+    exit 1
 else
     echo "PASS"
+    exit 0
 fi

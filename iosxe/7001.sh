@@ -5,7 +5,7 @@
 # 
 # Purpose: Check if device hostname is configured (not default Switch/Router)
 # Input: Configuration file path as argument
-# Output: PASS or FAILED
+# Output: PASS or FAIL
 # 
 # Usage: ./hostname_check.sh <config_file>
 # Example: ./hostname_check.sh running-config.txt
@@ -16,7 +16,7 @@
 #
 # Return Codes:
 # 0 = PASS (hostname configured properly)
-# 1 = FAILED (default hostname or no hostname found)
+# 1 = FAIL (default hostname or no hostname found)
 
 # Function to validate hostname configuration
 check_hostname() {
@@ -28,7 +28,7 @@ check_hostname() {
     
     # Check if hostname line exists
     if [ -z "$hostname_line" ]; then
-        echo "FAILED"
+        echo "FAIL"
         return 1
     fi
     
@@ -43,7 +43,7 @@ check_hostname() {
     # Check for: Switch, Router, switch, router
     case "$hostname_value" in
         "Switch"|"Router"|"switch"|"router")
-            echo "FAILED"
+            echo "FAIL"
             return 1
             ;;
         *)
@@ -57,7 +57,7 @@ check_hostname() {
 main() {
     # Validate input parameter
     if [ $# -ne 1 ]; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     
@@ -65,7 +65,7 @@ main() {
     
     # Check if file exists and is readable
     if [ ! -f "$config_file" ] || [ ! -r "$config_file" ]; then
-        echo "FAILED"
+        echo "FAIL"
         exit 1
     fi
     

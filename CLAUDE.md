@@ -21,23 +21,19 @@ A library of security-hardening compliance checks (CIS-benchmark style) for Linu
 
 ## ID scheme
 
-The same control index `k` means the same control across sibling platforms, so a fix to one control usually has to be mirrored at the same `k` in the other directories:
+**`controls.yaml` is the source of truth for Linux IDs.** Each control has a stable key (e.g. `linux.ssh.ssh_root_login_disabled`), a title, and its explicit script ID per distro; the `collectors` section does the same for the Go binary. A fix to one control usually has to be mirrored in the other distros' scripts listed under the same key. When adding or renumbering a Linux script, update `controls.yaml` in the same change.
 
-| Platform | Script IDs | Formula |
+| Platform | Script IDs | Index `k` |
 |---|---|---|
-| ubuntu | 1001–1090 | 1000+k |
-| debian | 11001–11090 (copied from ubuntu via `debian/rename.sh`) | 11000+k |
-| redhat | 2001–2091 | 2000+k |
-| rocky | 3001–3091 | 3000+k |
-| centos | 5001–5091 | 5000+k |
-| suse | 200–290 | 199+k |
-| oraclelinux | 100–190 | 99+k |
+| redhat / rocky / centos | 2001–2091 / 3001–3091 / 5001–5091 | 2000+k / 3000+k / 5000+k |
+| suse / oraclelinux | 200–290 / 100–190 | 199+k / 99+k |
+| ubuntu / debian | 1001–1090 / 11001–11090 | same as RHEL for k ≤ 49; **one lower from k = 51** |
 | windows | 4001–4026 | — |
 | iosxe / junos / iosxr / nxos | 7001–7015 / 8001–8015 / 9001–9015 / 10001–10015 | 7000+k … 10000+k |
 
-IDs just past each platform's script range are served by the Go binary instead of a script (see below).
+Ubuntu/Debian have no separate NIS client control (RHEL k = 50), so after it they are offset by one: Ubuntu `1050` (rsh) = RHEL `2051`. Debian is a copy of Ubuntu renamed by `debian/rename.sh`. IDs just past each platform's script range are served by the Go binary instead of a script (see below).
 
-The RHEL-family and SUSE/Oracle directories were cloned from each other, and recent commits ("fix rocky os", "fix centos os", "rocky - id checklist 2047") are about re-aligning them. When editing, watch for leftovers from the source distro: wrong OS name in banner checks (index 30), `rpm` vs `dpkg`, or a different control sitting at the same index. The latest CentOS fix copied `redhat/` scripts over, so compare against `redhat/` first.
+The RHEL-family, SUSE and Oracle directories were cloned from each other. When editing, watch for leftovers from the source distro: wrong OS name in the banner check (`linux.banner.banner_no_os_info`), `rpm` vs `dpkg`, or distro-specific package and service names. Compare against `redhat/` first.
 
 ## Go collector (`checklist/`)
 
@@ -77,7 +73,7 @@ bash iosxe/iosxe_run_all.sh iosxe/iosxe.cfg   # also junos/junos_run_all.sh, nxo
 
 ## Pitfalls
 
-- **Line endings.** The repo is edited on Windows with `core.autocrlf=true` and has no `.gitattributes`; some `.sh` files are stored with CRLF. CRLF breaks bash on the target (`$'\r': command not found`). Keep `.sh` files LF. Check with `git ls-files --eol | grep crlf`.
-- **Shebang must be line 1.** Several scripts start with a blank line, and a couple have `#!/bin/bash` glued onto the end of a comment line. Find them with `for f in $(git ls-files '*.sh'); do head -n1 "$f" | grep -q '^#!' || echo "$f"; done`.
+- **Line endings.** The repo is edited on Windows with `core.autocrlf=true`; `.gitattributes` forces `*.sh` to LF (`*.ps1` to CRLF). CRLF breaks bash on the target (`$'\r': command not found`), so don't remove that file. Check with `git ls-files --eol | grep crlf`.
+- **Shebang must be line 1.** Scripts copied between distros have arrived with a leading blank line or with `#!/bin/bash` glued onto a comment line. Check with `for f in $(git ls-files '*.sh'); do head -n1 "$f" | grep -q '^#!' || echo "$f"; done`.
 - Every host script must end on an explicit `exit 0`/`exit 1`; a missing exit returns whatever the last command returned.
 - `iosxr/execution_log.txt` is a leftover run log, not an input.

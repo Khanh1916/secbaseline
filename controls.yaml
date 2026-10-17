@@ -1,0 +1,321 @@
+# Catalog of Linux host controls and collectors.
+#
+# Each control maps to one script per distro: <platform>/<id>.sh (exit 0 = pass, 1 = fail).
+# Each collector maps to an ID of the Go binary: checklist/checklist <id> [args].
+#
+# IDs are listed explicitly because they do not line up by index across families:
+# Ubuntu/Debian have no separate NIS client control, so from linux.clients.rsh_removed
+# onward their IDs are one lower than the RHEL-family index.
+# Oracle Linux collectors are omitted: checklist/main.go defines no Oracle range
+# (only an unassigned 1-10 set).
+
+version: 1
+
+controls:
+  - key: linux.filesystem.cramfs_disabled
+    title: Ensure the cramfs kernel module is disabled
+    ids: {ubuntu: 1001, debian: 11001, redhat: 2001, rocky: 3001, centos: 5001, suse: 200, oraclelinux: 100}
+  - key: linux.filesystem.squashfs_disabled
+    title: Ensure the squashfs kernel module is disabled
+    ids: {ubuntu: 1002, debian: 11002, redhat: 2002, rocky: 3002, centos: 5002, suse: 201, oraclelinux: 101}
+  - key: linux.filesystem.udf_disabled
+    title: Ensure the udf kernel module is disabled
+    ids: {ubuntu: 1003, debian: 11003, redhat: 2003, rocky: 3003, centos: 5003, suse: 202, oraclelinux: 102}
+  - key: linux.filesystem.tmp_partition
+    title: Ensure /tmp is a separate partition
+    ids: {ubuntu: 1004, debian: 11004, redhat: 2004, rocky: 3004, centos: 5004, suse: 203, oraclelinux: 103}
+  - key: linux.filesystem.tmp_nodev
+    title: Ensure nodev option is set on /tmp
+    ids: {ubuntu: 1005, debian: 11005, redhat: 2005, rocky: 3005, centos: 5005, suse: 204, oraclelinux: 104}
+  - key: linux.filesystem.tmp_nosuid
+    title: Ensure nosuid option is set on /tmp
+    ids: {ubuntu: 1006, debian: 11006, redhat: 2006, rocky: 3006, centos: 5006, suse: 205, oraclelinux: 105}
+  - key: linux.filesystem.tmp_noexec
+    title: Ensure noexec option is set on /tmp
+    ids: {ubuntu: 1007, debian: 11007, redhat: 2007, rocky: 3007, centos: 5007, suse: 206, oraclelinux: 106}
+  - key: linux.filesystem.dev_shm_partition
+    title: Ensure /dev/shm is a separate partition
+    ids: {ubuntu: 1008, debian: 11008, redhat: 2008, rocky: 3008, centos: 5008, suse: 207, oraclelinux: 107}
+  - key: linux.filesystem.dev_shm_nodev
+    title: Ensure nodev option is set on /dev/shm
+    ids: {ubuntu: 1009, debian: 11009, redhat: 2009, rocky: 3009, centos: 5009, suse: 208, oraclelinux: 108}
+  - key: linux.filesystem.dev_shm_nosuid
+    title: Ensure nosuid option is set on /dev/shm
+    ids: {ubuntu: 1010, debian: 11010, redhat: 2010, rocky: 3010, centos: 5010, suse: 209, oraclelinux: 109}
+  - key: linux.filesystem.dev_shm_noexec
+    title: Ensure noexec option is set on /dev/shm
+    ids: {ubuntu: 1011, debian: 11011, redhat: 2011, rocky: 3011, centos: 5011, suse: 210, oraclelinux: 110}
+  - key: linux.filesystem.var_partition
+    title: Ensure /var is a separate partition
+    ids: {ubuntu: 1012, debian: 11012, redhat: 2012, rocky: 3012, centos: 5012, suse: 211, oraclelinux: 111}
+  - key: linux.filesystem.var_tmp_partition
+    title: Ensure /var/tmp is a separate partition or bound to /tmp
+    ids: {ubuntu: 1013, debian: 11013, redhat: 2013, rocky: 3013, centos: 5013, suse: 212, oraclelinux: 112}
+  - key: linux.filesystem.var_log_partition
+    title: Ensure /var/log is a separate partition
+    ids: {ubuntu: 1014, debian: 11014, redhat: 2014, rocky: 3014, centos: 5014, suse: 213, oraclelinux: 113}
+  - key: linux.filesystem.var_log_audit_partition
+    title: Ensure /var/log/audit is a separate partition
+    ids: {ubuntu: 1015, debian: 11015, redhat: 2015, rocky: 3015, centos: 5015, suse: 214, oraclelinux: 114}
+  - key: linux.filesystem.home_partition
+    title: Ensure /home is a separate partition
+    ids: {ubuntu: 1016, debian: 11016, redhat: 2016, rocky: 3016, centos: 5016, suse: 215, oraclelinux: 115}
+  - key: linux.filesystem.home_nodev
+    title: Ensure nodev option is set on /home
+    ids: {ubuntu: 1017, debian: 11017, redhat: 2017, rocky: 3017, centos: 5017, suse: 216, oraclelinux: 116}
+  - key: linux.filesystem.sticky_bit
+    title: Ensure sticky bit is set on all world-writable directories
+    ids: {ubuntu: 1018, debian: 11018, redhat: 2018, rocky: 3018, centos: 5018, suse: 217, oraclelinux: 117}
+  - key: linux.integrity.aide_installed
+    title: Ensure AIDE is installed
+    ids: {ubuntu: 1019, debian: 11019, redhat: 2019, rocky: 3019, centos: 5019, suse: 218, oraclelinux: 118}
+  - key: linux.hardening.core_dumps_restricted
+    title: Ensure core dumps are restricted
+    ids: {ubuntu: 1020, debian: 11020, redhat: 2020, rocky: 3020, centos: 5020, suse: 219, oraclelinux: 119}
+  - key: linux.hardening.aslr_enabled
+    title: Ensure address space layout randomization (ASLR) is enabled
+    ids: {ubuntu: 1021, debian: 11021, redhat: 2021, rocky: 3021, centos: 5021, suse: 220, oraclelinux: 120}
+  - key: linux.hardening.prelink_removed
+    title: Ensure prelink is not installed
+    ids: {ubuntu: 1022, debian: 11022, redhat: 2022, rocky: 3022, centos: 5022, suse: 221, oraclelinux: 121}
+  - key: linux.mac.selinux_installed
+    title: Ensure SELinux is installed
+    ids: {ubuntu: 1023, debian: 11023, redhat: 2023, rocky: 3023, centos: 5023, suse: 222, oraclelinux: 122}
+  - key: linux.mac.selinux_not_disabled
+    title: Ensure SELinux is not disabled
+    ids: {ubuntu: 1024, debian: 11024, redhat: 2024, rocky: 3024, centos: 5024, suse: 223, oraclelinux: 123}
+  - key: linux.mac.selinux_mode
+    title: Ensure SELinux mode is enforcing or permissive
+    ids: {ubuntu: 1025, debian: 11025, redhat: 2025, rocky: 3025, centos: 5025, suse: 224, oraclelinux: 124}
+  - key: linux.mac.selinux_enforcing
+    title: Ensure SELinux mode is enforcing
+    ids: {ubuntu: 1026, debian: 11026, redhat: 2026, rocky: 3026, centos: 5026, suse: 225, oraclelinux: 125}
+  - key: linux.mac.setroubleshoot_removed
+    title: Ensure SETroubleshoot is not installed
+    ids: {ubuntu: 1027, debian: 11027, redhat: 2027, rocky: 3027, centos: 5027, suse: 226, oraclelinux: 126}
+  - key: linux.mac.mcstrans_removed
+    title: Ensure the MCS Translation Service (mcstrans) is not installed
+    ids: {ubuntu: 1028, debian: 11028, redhat: 2028, rocky: 3028, centos: 5028, suse: 227, oraclelinux: 127}
+  - key: linux.banner.login_banner
+    title: Ensure a login warning banner is configured
+    ids: {ubuntu: 1029, debian: 11029, redhat: 2029, rocky: 3029, centos: 5029, suse: 228, oraclelinux: 128}
+  - key: linux.banner.banner_no_os_info
+    title: Ensure the login banner does not disclose OS information
+    ids: {ubuntu: 1030, debian: 11030, redhat: 2030, rocky: 3030, centos: 5030, suse: 229, oraclelinux: 129}
+  - key: linux.time.clock_synchronized
+    title: Ensure the system clock is synchronized
+    ids: {ubuntu: 1031, debian: 11031, redhat: 2031, rocky: 3031, centos: 5031, suse: 230, oraclelinux: 130}
+  - key: linux.time.chrony_enabled
+    title: Ensure chrony is enabled
+    ids: {ubuntu: 1032, debian: 11032, redhat: 2032, rocky: 3032, centos: 5032, suse: 231, oraclelinux: 131}
+  - key: linux.time.ntp_enabled
+    title: Ensure ntp is enabled
+    ids: {ubuntu: 1033, debian: 11033, redhat: 2033, rocky: 3033, centos: 5033, suse: 232, oraclelinux: 132}
+  - key: linux.services.xinetd_removed
+    title: Ensure xinetd is not installed
+    ids: {ubuntu: 1034, debian: 11034, redhat: 2034, rocky: 3034, centos: 5034, suse: 233, oraclelinux: 133}
+  - key: linux.services.xorg_removed
+    title: Ensure the X Window System is not installed
+    ids: {ubuntu: 1035, debian: 11035, redhat: 2035, rocky: 3035, centos: 5035, suse: 234, oraclelinux: 134}
+  - key: linux.services.avahi_disabled
+    title: Ensure the Avahi server is not enabled
+    ids: {ubuntu: 1036, debian: 11036, redhat: 2036, rocky: 3036, centos: 5036, suse: 235, oraclelinux: 135}
+  - key: linux.services.cups_disabled
+    title: Ensure CUPS is not enabled
+    ids: {ubuntu: 1037, debian: 11037, redhat: 2037, rocky: 3037, centos: 5037, suse: 236, oraclelinux: 136}
+  - key: linux.services.dhcp_server_removed
+    title: Ensure a DHCP server is not installed
+    ids: {ubuntu: 1038, debian: 11038, redhat: 2038, rocky: 3038, centos: 5038, suse: 237, oraclelinux: 137}
+  - key: linux.services.ldap_server_removed
+    title: Ensure an LDAP server is not installed
+    ids: {ubuntu: 1039, debian: 11039, redhat: 2039, rocky: 3039, centos: 5039, suse: 238, oraclelinux: 138}
+  - key: linux.services.dns_server_removed
+    title: Ensure a DNS server is not installed
+    ids: {ubuntu: 1040, debian: 11040, redhat: 2040, rocky: 3040, centos: 5040, suse: 239, oraclelinux: 139}
+  - key: linux.services.ftp_server_removed
+    title: Ensure an FTP server is not installed
+    ids: {ubuntu: 1041, debian: 11041, redhat: 2041, rocky: 3041, centos: 5041, suse: 240, oraclelinux: 140}
+  - key: linux.services.http_server_removed
+    title: Ensure an HTTP server is not installed
+    ids: {ubuntu: 1042, debian: 11042, redhat: 2042, rocky: 3042, centos: 5042, suse: 241, oraclelinux: 141}
+  - key: linux.services.imap_pop3_removed
+    title: Ensure an IMAP/POP3 server is not installed
+    ids: {ubuntu: 1043, debian: 11043, redhat: 2043, rocky: 3043, centos: 5043, suse: 242, oraclelinux: 142}
+  - key: linux.services.samba_removed
+    title: Ensure Samba is not installed
+    ids: {ubuntu: 1044, debian: 11044, redhat: 2044, rocky: 3044, centos: 5044, suse: 243, oraclelinux: 143}
+  - key: linux.services.http_proxy_removed
+    title: Ensure an HTTP proxy server is not installed
+    ids: {ubuntu: 1045, debian: 11045, redhat: 2045, rocky: 3045, centos: 5045, suse: 244, oraclelinux: 144}
+  - key: linux.services.nis_server_removed
+    title: Ensure the NIS server is not installed
+    ids: {ubuntu: 1046, debian: 11046, redhat: 2046, rocky: 3046, centos: 5046, suse: 245, oraclelinux: 145}
+  - key: linux.services.telnet_server_removed
+    title: Ensure the telnet server is not installed
+    ids: {ubuntu: 1047, debian: 11047, redhat: 2047, rocky: 3047, centos: 5047, suse: 246, oraclelinux: 146}
+  - key: linux.services.mta_local_only
+    title: Ensure the mail transfer agent is configured for local-only mode
+    ids: {ubuntu: 1048, debian: 11048, redhat: 2048, rocky: 3048, centos: 5048, suse: 247, oraclelinux: 147}
+  - key: linux.services.nfs_disabled
+    title: Ensure the NFS server is not enabled
+    ids: {ubuntu: 1049, debian: 11049, redhat: 2049, rocky: 3049, centos: 5049, suse: 248, oraclelinux: 148}
+  - key: linux.clients.nis_client_removed
+    title: Ensure the NIS client is not installed
+    ids: {redhat: 2050, rocky: 3050, centos: 5050, suse: 249, oraclelinux: 149}
+  - key: linux.clients.rsh_removed
+    title: Ensure the rsh client is not installed
+    ids: {ubuntu: 1050, debian: 11050, redhat: 2051, rocky: 3051, centos: 5051, suse: 250, oraclelinux: 150}
+  - key: linux.clients.talk_removed
+    title: Ensure the talk client is not installed
+    ids: {ubuntu: 1051, debian: 11051, redhat: 2052, rocky: 3052, centos: 5052, suse: 251, oraclelinux: 151}
+  - key: linux.clients.ldap_client_removed
+    title: Ensure the LDAP client is not installed
+    ids: {ubuntu: 1052, debian: 11052, redhat: 2053, rocky: 3053, centos: 5053, suse: 252, oraclelinux: 152}
+  - key: linux.network.ip_forward_disabled
+    title: Ensure IP forwarding is disabled
+    ids: {ubuntu: 1053, debian: 11053, redhat: 2054, rocky: 3054, centos: 5054, suse: 253, oraclelinux: 153}
+  - key: linux.network.send_redirects_disabled
+    title: Ensure packet redirect sending is disabled
+    ids: {ubuntu: 1054, debian: 11054, redhat: 2055, rocky: 3055, centos: 5055, suse: 254, oraclelinux: 154}
+  - key: linux.network.source_route_rejected
+    title: Ensure source routed packets are not accepted
+    ids: {ubuntu: 1055, debian: 11055, redhat: 2056, rocky: 3056, centos: 5056, suse: 255, oraclelinux: 155}
+  - key: linux.network.icmp_redirects_rejected
+    title: Ensure ICMP redirects are not accepted
+    ids: {ubuntu: 1056, debian: 11056, redhat: 2057, rocky: 3057, centos: 5057, suse: 256, oraclelinux: 156}
+  - key: linux.network.secure_redirects_rejected
+    title: Ensure secure ICMP redirects are not accepted
+    ids: {ubuntu: 1057, debian: 11057, redhat: 2058, rocky: 3058, centos: 5058, suse: 257, oraclelinux: 157}
+  - key: linux.network.log_martians
+    title: Ensure suspicious (martian) packets are logged
+    ids: {ubuntu: 1058, debian: 11058, redhat: 2059, rocky: 3059, centos: 5059, suse: 258, oraclelinux: 158}
+  - key: linux.network.ignore_broadcast_icmp
+    title: Ensure broadcast ICMP requests are ignored
+    ids: {ubuntu: 1059, debian: 11059, redhat: 2060, rocky: 3060, centos: 5060, suse: 259, oraclelinux: 159}
+  - key: linux.network.ignore_bogus_icmp
+    title: Ensure bogus ICMP responses are ignored
+    ids: {ubuntu: 1060, debian: 11060, redhat: 2061, rocky: 3061, centos: 5061, suse: 260, oraclelinux: 160}
+  - key: linux.network.rp_filter
+    title: Ensure reverse path filtering is enabled
+    ids: {ubuntu: 1061, debian: 11061, redhat: 2062, rocky: 3062, centos: 5062, suse: 261, oraclelinux: 161}
+  - key: linux.network.tcp_syncookies
+    title: Ensure TCP SYN cookies are enabled
+    ids: {ubuntu: 1062, debian: 11062, redhat: 2063, rocky: 3063, centos: 5063, suse: 262, oraclelinux: 162}
+  - key: linux.tcp_wrappers.tcp_wrappers_installed
+    title: Ensure TCP Wrappers is installed
+    ids: {ubuntu: 1063, debian: 11063, redhat: 2064, rocky: 3064, centos: 5064, suse: 263, oraclelinux: 163}
+  - key: linux.tcp_wrappers.hosts_allow_configured
+    title: Ensure /etc/hosts.allow is configured
+    ids: {ubuntu: 1064, debian: 11064, redhat: 2065, rocky: 3065, centos: 5065, suse: 264, oraclelinux: 164}
+  - key: linux.tcp_wrappers.hosts_allow_perms
+    title: Ensure permissions on /etc/hosts.allow are configured
+    ids: {ubuntu: 1065, debian: 11065, redhat: 2066, rocky: 3066, centos: 5066, suse: 265, oraclelinux: 165}
+  - key: linux.tcp_wrappers.hosts_deny_configured
+    title: Ensure /etc/hosts.deny denies all by default
+    ids: {ubuntu: 1066, debian: 11066, redhat: 2067, rocky: 3067, centos: 5067, suse: 266, oraclelinux: 166}
+  - key: linux.tcp_wrappers.hosts_deny_perms
+    title: Ensure permissions on /etc/hosts.deny are configured
+    ids: {ubuntu: 1067, debian: 11067, redhat: 2068, rocky: 3068, centos: 5068, suse: 267, oraclelinux: 167}
+  - key: linux.firewall.firewall_enabled
+    title: Ensure a host firewall is enabled
+    ids: {ubuntu: 1068, debian: 11068, redhat: 2069, rocky: 3069, centos: 5069, suse: 268, oraclelinux: 168}
+  - key: linux.firewall.firewall_rules
+    title: Ensure firewall rules are configured
+    ids: {ubuntu: 1069, debian: 11069, redhat: 2070, rocky: 3070, centos: 5070, suse: 269, oraclelinux: 169}
+  - key: linux.ssh.sshd_config_perms
+    title: Ensure permissions on /etc/ssh/sshd_config are configured
+    ids: {ubuntu: 1070, debian: 11070, redhat: 2071, rocky: 3071, centos: 5071, suse: 270, oraclelinux: 170}
+  - key: linux.ssh.ssh_protocol_2
+    title: Ensure SSH Protocol is set to 2
+    ids: {ubuntu: 1071, debian: 11071, redhat: 2072, rocky: 3072, centos: 5072, suse: 271, oraclelinux: 171}
+  - key: linux.ssh.ssh_loglevel
+    title: Ensure SSH LogLevel is INFO or VERBOSE
+    ids: {ubuntu: 1072, debian: 11072, redhat: 2073, rocky: 3073, centos: 5073, suse: 272, oraclelinux: 172}
+  - key: linux.ssh.ssh_x11_forwarding_disabled
+    title: Ensure SSH X11 forwarding is disabled
+    ids: {ubuntu: 1073, debian: 11073, redhat: 2074, rocky: 3074, centos: 5074, suse: 273, oraclelinux: 173}
+  - key: linux.ssh.ssh_max_auth_tries
+    title: Ensure SSH MaxAuthTries is set to 4 or less
+    ids: {ubuntu: 1074, debian: 11074, redhat: 2075, rocky: 3075, centos: 5075, suse: 274, oraclelinux: 174}
+  - key: linux.ssh.ssh_root_login_disabled
+    title: Ensure SSH root login is disabled
+    ids: {ubuntu: 1075, debian: 11075, redhat: 2076, rocky: 3076, centos: 5076, suse: 275, oraclelinux: 175}
+  - key: linux.logging.rsyslog_enabled
+    title: Ensure rsyslog is installed and enabled
+    ids: {ubuntu: 1076, debian: 11076, redhat: 2077, rocky: 3077, centos: 5077, suse: 276, oraclelinux: 176}
+  - key: linux.logging.log_file_perms
+    title: Ensure permissions on log files are configured
+    ids: {ubuntu: 1077, debian: 11077, redhat: 2078, rocky: 3078, centos: 5078, suse: 277, oraclelinux: 177}
+  - key: linux.audit.audit_rules
+    title: Ensure audit rules are configured
+    ids: {ubuntu: 1078, debian: 11078, redhat: 2079, rocky: 3079, centos: 5079, suse: 278, oraclelinux: 178}
+  - key: linux.audit.auditd_installed
+    title: Ensure auditd is installed
+    ids: {ubuntu: 1079, debian: 11079, redhat: 2080, rocky: 3080, centos: 5080, suse: 279, oraclelinux: 179}
+  - key: linux.audit.auditd_enabled
+    title: Ensure the auditd service is enabled and running
+    ids: {ubuntu: 1080, debian: 11080, redhat: 2081, rocky: 3081, centos: 5081, suse: 280, oraclelinux: 180}
+  - key: linux.auth.lockout_module
+    title: Ensure an account lockout PAM module is configured
+    ids: {ubuntu: 1081, debian: 11081, redhat: 2082, rocky: 3082, centos: 5082, suse: 281, oraclelinux: 181}
+  - key: linux.auth.pwquality
+    title: Ensure password quality requirements are configured
+    ids: {ubuntu: 1082, debian: 11082, redhat: 2083, rocky: 3083, centos: 5083, suse: 282, oraclelinux: 182}
+  - key: linux.auth.lockout_deny
+    title: Ensure lockout after failed password attempts is configured
+    ids: {ubuntu: 1083, debian: 11083, redhat: 2084, rocky: 3084, centos: 5084, suse: 283, oraclelinux: 183}
+  - key: linux.auth.password_reuse
+    title: Ensure password reuse is limited
+    ids: {ubuntu: 1084, debian: 11084, redhat: 2085, rocky: 3085, centos: 5085, suse: 284, oraclelinux: 184}
+  - key: linux.auth.password_hash_sha512
+    title: Ensure the password hashing algorithm is SHA-512
+    ids: {ubuntu: 1085, debian: 11085, redhat: 2086, rocky: 3086, centos: 5086, suse: 285, oraclelinux: 185}
+  - key: linux.auth.pass_max_days
+    title: Ensure password expiration is 90 days or less
+    ids: {ubuntu: 1086, debian: 11086, redhat: 2087, rocky: 3087, centos: 5087, suse: 286, oraclelinux: 186}
+  - key: linux.auth.password_expiry_set
+    title: Ensure user password expiration is set
+    ids: {ubuntu: 1087, debian: 11087, redhat: 2088, rocky: 3088, centos: 5088, suse: 287, oraclelinux: 187}
+  - key: linux.auth.pass_min_days
+    title: Ensure minimum days between password changes is 1 or more
+    ids: {ubuntu: 1088, debian: 11088, redhat: 2089, rocky: 3089, centos: 5089, suse: 288, oraclelinux: 188}
+  - key: linux.auth.pass_warn_age
+    title: Ensure password expiration warning is 7 days or more
+    ids: {ubuntu: 1089, debian: 11089, redhat: 2090, rocky: 3090, centos: 5090, suse: 289, oraclelinux: 189}
+  - key: linux.auth.inactive_lock
+    title: Ensure the inactive password lock (INACTIVE) is configured
+    ids: {ubuntu: 1090, debian: 11090, redhat: 2091, rocky: 3091, centos: 5091, suse: 290, oraclelinux: 190}
+
+collectors:
+  - key: linux.collect.ssh_keys
+    title: SSH authorized_keys per user
+    ids: {ubuntu: 1091, debian: 11091, redhat: 2092, rocky: 3092, centos: 5092, suse: 291}
+  - key: linux.collect.accounts
+    title: Local account names
+    ids: {ubuntu: 1092, debian: 11092, redhat: 2093, rocky: 3093, centos: 5093, suse: 292}
+  - key: linux.collect.users_groups
+    title: Users, groups and sudoers entries
+    ids: {ubuntu: 1093, debian: 11093, redhat: 2094, rocky: 3094, centos: 5094, suse: 293}
+  - key: linux.collect.password_policy
+    title: Password policy from login.defs and PAM
+    ids: {ubuntu: 1094, debian: 11094, redhat: 2095, rocky: 3095, centos: 5095, suse: 294}
+  - key: linux.collect.patching
+    title: OS and kernel version (uname -a)
+    ids: {ubuntu: 1095, debian: 11095, redhat: 2096, rocky: 3096, centos: 5096, suse: 295}
+  - key: linux.collect.file_checksums
+    title: SHA-256 checksums of the given files
+    args: "-F <file,...>"
+    ids: {ubuntu: 1096, debian: 11096, redhat: 2097, rocky: 3097, centos: 5097, suse: 296}
+  - key: linux.collect.file_listing
+    title: Files in the given directories
+    args: "-f <dir,...>"
+    ids: {ubuntu: 1097, debian: 11097, redhat: 2098, rocky: 3098, centos: 5098, suse: 297}
+  - key: linux.collect.listening_ports
+    title: Non-loopback listening TCP/UDP ports
+    ids: {ubuntu: 1098, debian: 11098, redhat: 2099, rocky: 3099, centos: 5099, suse: 298}
+  - key: linux.collect.firewall_rules
+    title: iptables/ip6tables rules for all tables
+    ids: {ubuntu: 1099, debian: 11099, redhat: 2100, rocky: 3100, centos: 5100, suse: 299}
+  - key: linux.collect.log_config
+    title: rsyslog configuration and logging agent status
+    ids: {ubuntu: 1100, debian: 11100, redhat: 2101, rocky: 3101, centos: 5101, suse: 300}

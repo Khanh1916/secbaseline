@@ -70,6 +70,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+# An empty file (or one holding only comments) is not a configuration: fail
+# instead of reporting the settings it lacks as compliant.
+if ! grep -qvE '^[[:space:]]*([!#].*)?$' "$CONFIG_FILE"; then
+    echo "FAIL"
+    exit 1
+fi
+
 # Check for forbidden small services
 check_small_services() {
     local failed_services=()

@@ -112,7 +112,7 @@ The script exits `0` after a `PASS:` line and `1` after a `FAIL:` line. No other
 used. Output is English and ASCII.
 
 **Network checks** take the configuration file as their only argument and print exactly `PASS` or
-`FAIL`, exiting `0` or `1` to match.
+`FAIL`, exiting `0` or `1` to match. A file that is empty or holds only comments fails every check.
 
 The runner treats any disagreement between the verdict line and the exit code, a missing verdict,
 or a timeout as an `error` and keeps the raw output for diagnosis.
@@ -231,9 +231,6 @@ These come from reviewing the check logic. They are not fixed yet.
 - `linux.services.mta_local_only` on the RHEL family, SUSE and Oracle Linux reads only Postfix's
   `inet_interfaces`, so it fails when Postfix is not installed and ignores other MTAs. Ubuntu and
   Debian check the listening sockets instead.
-- Several network checks pass on an empty configuration: Junos `8004`, `8005` and `8010`; IOS XR
-  `9004` and `9005`; NX-OS `10007` and `10011`. Here a missing setting is deliberate ("not
-  applicable" or a secure default), but an empty file should not pass.
 - IOS XE `7007` (console authentication) accepts AAA only as `aaa authentication login default
   local`; a default list that uses TACACS+ or RADIUS falls back to the per-line checks.
 - IOS XE `7008` (centralized AAA) recognizes `group radius` and `group tacacs+`, not named server

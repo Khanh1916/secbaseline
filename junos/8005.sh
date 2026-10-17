@@ -74,6 +74,13 @@ fi
 CONFIG="$1"
 [ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
+# An empty file (or one holding only comments) is not a configuration: fail
+# instead of reporting the settings it lacks as compliant.
+if ! grep -qvE '^[[:space:]]*([!#].*)?$' "$CONFIG"; then
+    echo "FAIL"
+    exit 1
+fi
+
 # List of services that should be disabled
 services_to_disable=(
     "bbe-stats-service"

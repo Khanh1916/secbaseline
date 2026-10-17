@@ -64,6 +64,13 @@ if [[ -z "$CONFIG_FILE" || ! -f "$CONFIG_FILE" ]]; then
     exit 1
 fi
 
+# An empty file (or one holding only comments) is not a configuration: fail
+# instead of reporting the settings it lacks as compliant.
+if ! grep -qvE '^[[:space:]]*([!#].*)?$' "$CONFIG_FILE"; then
+    echo "FAIL"
+    exit 1
+fi
+
 # Detect SNMP version
 if grep -q "set snmp v3" "$CONFIG_FILE"; then
     SNMP_VERSION="v3"

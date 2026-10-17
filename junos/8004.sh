@@ -48,6 +48,13 @@ fi
 CONFIG="$1"
 [ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
+# An empty file (or one holding only comments) is not a configuration: fail
+# instead of reporting the settings it lacks as compliant.
+if ! grep -qvE '^[[:space:]]*([!#].*)?$' "$CONFIG"; then
+    echo "FAIL"
+    exit 1
+fi
+
 # === Default ports ===
 declare -A default_ports=(
     ["ssh"]=22
@@ -120,7 +127,7 @@ for svc in "${!service_ports[@]}"; do
             done
         fi
     done
-    $port_protected || { echo "FAIL"; exit 0; }
+    $port_protected || { echo "FAIL"; exit 1; }
 done
 
 # Check allow rule

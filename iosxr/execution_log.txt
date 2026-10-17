@@ -1,0 +1,32 @@
+========================================
+EXECUTION LOG - Mon Aug 18 23:30:21 +07 2025
+========================================
+2025-08-18 23:30:21 | 9001.sh | ERROR | Exit code: 2
+2025-08-18 23:30:21 | 9001.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:23 | 9002.sh | ERROR | Exit code: 2
+2025-08-18 23:30:23 | 9002.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:24 | 9003.sh | ERROR | Exit code: 2
+2025-08-18 23:30:24 | 9003.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:25 | 9004.sh | ERROR | Exit code: 2
+2025-08-18 23:30:25 | 9004.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:26 | 9005.sh | ERROR | Exit code: 2
+2025-08-18 23:30:26 | 9005.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:27 | 9007.sh | ERROR | Exit code: 2
+2025-08-18 23:30:27 | 9007.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:28 | 9008.sh | ERROR | Exit code: 2
+2025-08-18 23:30:28 | 9008.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:29 | 9009.sh | ERROR | Exit code: 2
+2025-08-18 23:30:29 | 9009.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:30 | 9010.sh | ERROR | Exit code: 2
+2025-08-18 23:30:30 | 9010.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:32 | 9011.sh | ERROR | Exit code: 2
+2025-08-18 23:30:32 | 9011.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:33 | 9012.sh | ERROR | Exit code: 2
+2025-08-18 23:30:33 | 9012.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:34 | 9013.sh | ERROR | Exit code: 2
+2025-08-18 23:30:34 | 9013.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:35 | 9014.sh | ERROR | Exit code: 2
+2025-08-18 23:30:35 | 9014.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:36 | 9015.sh | ERROR | Exit code: 2
+2025-08-18 23:30:36 | 9015.sh | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes
+2025-08-18 23:30:37 | FINAL_CHECK | CONFIG_OK | asr9k.cfg có 229 dòng, 6439 bytes

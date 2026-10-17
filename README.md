@@ -77,14 +77,14 @@ The run prints a one-line summary to stderr, such as
 ## How it works
 
 ```mermaid
-flowchart LR
-    catalog["controls.yaml<br/>(controls, IDs, platforms)"] --> run["checklist run"]
-    run -- "bash / PowerShell" --> scripts["platform scripts<br/>ubuntu/1001.sh, windows/4001.ps1, ..."]
-    scripts -- "INFO / PASS / FAIL<br/>+ exit code" --> run
-    run --> collectors["built-in collectors<br/>(SSH keys, ports, ...)"]
-    run --> json["report.json"]
-    run --> html["report.html"]
-    json --> report["checklist report"] --> html
+flowchart TD
+    catalog["controls.yaml"] --> run["checklist run"]
+    run --> scripts["Platform scripts"]
+    run --> collectors["Built-in collectors"]
+    scripts --> verdicts["Verdict lines and exit codes"]
+    verdicts --> json["report.json"]
+    collectors --> json
+    json --> html["report.html"]
 ```
 
 1. [`controls.yaml`](controls.yaml) lists every control with a stable key, a title and the

@@ -85,10 +85,10 @@ footer { margin-top:24px; color:var(--muted); font-size:12px; }
 {{if gt (len .Rows) 1}}
 <section class="card"><h2>Score trend</h2>
   <svg class="trend" viewBox="0 0 600 120" role="img" aria-label="Compliance score over time">
-    <line x1="10" y1="10" x2="590" y2="10" stroke="currentColor" stroke-opacity="0.12"/>
-    <line x1="10" y1="110" x2="590" y2="110" stroke="currentColor" stroke-opacity="0.12"/>
-    <text x="14" y="22" font-size="10" fill="currentColor" fill-opacity="0.55">100%</text>
-    <text x="14" y="106" font-size="10" fill="currentColor" fill-opacity="0.55">0%</text>
+    <line x1="44" y1="10" x2="590" y2="10" stroke="currentColor" stroke-opacity="0.12"/>
+    <line x1="44" y1="110" x2="590" y2="110" stroke="currentColor" stroke-opacity="0.12"/>
+    <text x="36" y="13" font-size="10" text-anchor="end" fill="currentColor" fill-opacity="0.55">100%</text>
+    <text x="36" y="113" font-size="10" text-anchor="end" fill="currentColor" fill-opacity="0.55">0%</text>
     <polyline points="{{.Trend}}" fill="none" stroke="#2f5bd3" stroke-width="2.5" stroke-linejoin="round"/>
   </svg>
 </section>

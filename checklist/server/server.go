@@ -273,17 +273,18 @@ func (s *Server) render(w http.ResponseWriter, name string, data any) {
 
 // trend returns SVG polyline points for the score history (oldest left).
 func trend(rows []historyRow) string {
-	const width, height, pad = 600.0, 120.0, 10.0
+	// Plot area: x from left to width-pad (labels sit left of it), y from pad to height-pad.
+	const width, height, pad, left = 600.0, 120.0, 10.0, 44.0
 	if len(rows) == 0 {
 		return ""
 	}
 	var pts []string
 	step := 0.0
 	if len(rows) > 1 {
-		step = (width - 2*pad) / float64(len(rows)-1)
+		step = (width - pad - left) / float64(len(rows)-1)
 	}
 	for i, r := range rows {
-		x := pad + step*float64(i)
+		x := left + step*float64(i)
 		y := height - pad - r.Summary.Score/100*(height-2*pad)
 		pts = append(pts, fmt.Sprintf("%.1f,%.1f", x, y))
 	}

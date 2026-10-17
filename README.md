@@ -228,8 +228,6 @@ go build -o checklist .        # then from the repository root:
 
 These come from reviewing the check logic. They are not fixed yet.
 
-- `linux.auth.inactive_lock` passes when `INACTIVE` is 30 days **or more**; CIS recommends 30 days or
-  less.
 - `linux.services.mta_local_only` on Ubuntu and Debian passes when any MTA package is installed,
   without checking that it listens only locally.
 - `linux.auth.pwquality` and `linux.auth.lockout_deny` pass when the PAM module is present and only

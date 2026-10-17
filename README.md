@@ -103,9 +103,9 @@ All checks follow one contract, so any tool can consume them directly, with or w
 followed by exactly one verdict line:
 
 ```text
-INFO: /etc/pam.d/system-auth
-INFO: pam_faillock.so deny=5
-PASS: Account lockout (deny) is configured in PAM
+INFO: /etc/pam.d/system-auth: pam_faillock.so deny=5 (argument)
+INFO: /etc/pam.d/password-auth: pam_faillock.so deny=5 (argument)
+PASS: Account lockout deny is between 1 and 5 on every pam_faillock/pam_tally2 auth line
 ```
 
 The script exits `0` after a `PASS:` line and `1` after a `FAIL:` line. No other exit codes are
@@ -231,8 +231,6 @@ These come from reviewing the check logic. They are not fixed yet.
 - `linux.services.mta_local_only` on the RHEL family, SUSE and Oracle Linux reads only Postfix's
   `inet_interfaces`, so it fails when Postfix is not installed and ignores other MTAs. Ubuntu and
   Debian check the listening sockets instead.
-- `linux.auth.lockout_deny` passes when the PAM module is present and only reports the configured
-  values as `INFO` lines; it does not check them against thresholds.
 - Several network checks pass on an empty configuration: IOS XE `7003`, `7007` and `7008`; Junos
   `8004`, `8005` and `8010`; IOS XR `9004` and `9005`; NX-OS `10007` and `10011`. Some are
   deliberate ("not applicable" when nothing is configured); others, such as `7008` (centralized AAA),

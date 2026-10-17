@@ -25,7 +25,7 @@ sudo bash debian/11001.sh; echo "exit=$?"
 ## Notes
 
 - These scripts were copied from [`../ubuntu`](../ubuntu) and renamed with [`rename.sh`](rename.sh) (`1001.sh` → `11001.sh`). A fix to one usually belongs in both.
-- The only intentional difference is `11083.sh`, which checks both `pam_faillock` and `pam_tally2`.
+- The two directories hold the same checks; there are no intentional differences.
 
 <!-- BEGIN GENERATED: checklist docs -->
 

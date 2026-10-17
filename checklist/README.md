@@ -64,7 +64,7 @@ checks found. It exits `1` only when the run itself could not proceed.
 
 ### How a check result is decided
 
-Every script follows the output contract described in the [repository README](../README.md#output-contract).
+Every script follows the output contract described in the [contributing guide](../CONTRIBUTING.md#output-contract).
 The runner reads the last `PASS`/`FAIL` line of stdout, collects `INFO:` lines as details, and
 requires the exit code to agree:
 
@@ -76,6 +76,34 @@ requires the exit code to agree:
 
 Scripts run with `LC_ALL=C` so the command output they parse is in English, with the platform
 directory as working directory. Output is capped at 1 MiB per stream.
+
+## Report format
+
+`checklist run` writes one JSON document (`schema_version` changes only on incompatible changes):
+
+```json
+{
+  "schema_version": 1,
+  "tool": { "name": "checklist", "version": "1.0.0" },
+  "platform": { "key": "ubuntu", "name": "Ubuntu", "kind": "linux" },
+  "host": { "hostname": "web01", "os": "linux", "platform": "ubuntu", "platform_version": "24.04", "arch": "amd64" },
+  "started_at": "2026-10-17T08:20:02Z",
+  "summary": { "total": 90, "pass": 71, "fail": 18, "error": 1, "score": 79.8 },
+  "checks": [
+    { "key": "linux.filesystem.var_tmp_partition", "id": "1013", "title": "Ensure /var/tmp is a separate partition or bound to /tmp",
+      "section": "filesystem", "status": "fail", "message": "/var/tmp is not a symlink to /tmp",
+      "details": ["drwxrwxrwt 2 root root 4096 Oct 17 08:00 /var/tmp"], "exit_code": 1, "duration_ms": 4 }
+  ],
+  "collectors": [
+    { "key": "collect.listening_ports", "id": "1098", "title": "Non-loopback listening TCP/UDP ports", "status": "ok", "output": "0.0.0.0:22/TCP" }
+  ]
+}
+```
+
+- Check `status`: `pass`, `fail` or `error` (errors keep raw `output` and `stderr`). Collector
+  `status`: `ok`, `error` or `skipped`.
+- `score` is `pass / (pass + fail)` as a percentage; errors are excluded.
+- Network reports add `target`: the configuration path, its SHA-256 and the device hostname.
 
 ## `checklist diff`
 

@@ -228,8 +228,9 @@ go build -o checklist .        # then from the repository root:
 
 These come from reviewing the check logic. They are not fixed yet.
 
-- `linux.services.mta_local_only` on Ubuntu and Debian passes when any MTA package is installed,
-  without checking that it listens only locally.
+- `linux.services.mta_local_only` on the RHEL family, SUSE and Oracle Linux reads only Postfix's
+  `inet_interfaces`, so it fails when Postfix is not installed and ignores other MTAs. Ubuntu and
+  Debian check the listening sockets instead.
 - `linux.auth.pwquality` and `linux.auth.lockout_deny` pass when the PAM module is present and only
   report the configured values as `INFO` lines; they do not check them against thresholds.
 - Several network checks pass on an empty configuration: IOS XE `7003`, `7007` and `7008`; Junos

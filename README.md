@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ secbaseline
+# secbaseline
 
 **Security hardening checks, compliance reports and drift detection for Linux, Windows and network devices.**
 
@@ -8,22 +8,22 @@
 [![Release](https://img.shields.io/github/v/release/Khanh1916/secbaseline?style=flat-square)](https://github.com/Khanh1916/secbaseline/releases/latest)
 [![Go](https://img.shields.io/badge/Go-1.24%2B-00ADD8?style=flat-square&logo=go&logoColor=white)](checklist/go.mod)
 [![Controls](https://img.shields.io/badge/controls-131-blueviolet?style=flat-square)](controls.yaml)
-[![Platforms](https://img.shields.io/badge/platforms-12-007ACC?style=flat-square)](#-coverage)
+[![Platforms](https://img.shields.io/badge/platforms-12-007ACC?style=flat-square)](#coverage)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
-[Features](#-features) •
-[Coverage](#-coverage) •
-[Quick start](#-quick-start) •
-[Screenshots](#-screenshots) •
-[How it works](#-how-it-works) •
-[Dashboard](#-fleet-dashboard) •
+[Features](#features) •
+[Coverage](#coverage) •
+[Quick start](#quick-start) •
+[Screenshots](#screenshots) •
+[How it works](#how-it-works) •
+[Dashboard](#fleet-dashboard) •
 [Contributing](CONTRIBUTING.md)
 
 <img src="docs/images/dashboard.png" alt="secbaseline dashboard listing hosts and network devices by compliance score" width="900">
 
 </div>
 
-## ✨ Features
+## Features
 
 - **131 CIS-style controls on 12 platforms**: Ubuntu, Debian, RHEL, Rocky Linux, CentOS, SUSE,
   Oracle Linux, Windows, Cisco IOS XE / IOS XR / NX-OS and Juniper Junos.
@@ -38,7 +38,7 @@
 - **One output contract**: every script prints `PASS:`/`FAIL:` and exits `0`/`1`, so the checks also
   work on their own or from other tools. `checklist lint` and CI enforce it.
 
-## 📋 Coverage
+## Coverage
 
 | Platform | Directory | Controls | Check IDs |
 |---|---|:---:|---|
@@ -59,7 +59,7 @@ Linux controls cover mounts and filesystems, kernel hardening, SELinux, banners,
 unneeded services, network parameters, firewall, SSH, logging, auditd, PAM and password policy.
 Each directory's README lists its controls; [`controls.yaml`](controls.yaml) is the full catalog.
 
-## 🚀 Quick start
+## Quick start
 
 Download the archive for your platform from the
 [latest release](https://github.com/Khanh1916/secbaseline/releases/latest) (binary plus all check
@@ -87,7 +87,7 @@ On Windows, run from an elevated PowerShell:
 
 Every command and flag is documented in [`checklist/README.md`](checklist/README.md).
 
-## 📸 Screenshots
+## Screenshots
 
 <table>
   <tr>
@@ -102,7 +102,7 @@ Every command and flag is documented in [`checklist/README.md`](checklist/README
 
 <sub>Screenshots use the sample configurations shipped in this repository.</sub>
 
-## 🏗️ How it works
+## How it works
 
 ```mermaid
 flowchart TD
@@ -127,7 +127,7 @@ with a per-check timeout, runs the inventory collectors, and writes the report.
 - A verdict that disagrees with the exit code, a missing verdict or a timeout is an `error`.
 - The score is `pass / (pass + fail)`; errors are reported separately.
 
-## 📊 Fleet dashboard
+## Fleet dashboard
 
 ```bash
 # Dashboard server
@@ -142,7 +142,7 @@ regressions and inventory changes since its previous report, and every stored re
 stored as plain JSON files; there is no database. A token is required unless the server listens on
 loopback only. Put it behind HTTPS when it is reachable over a network.
 
-## ⚙️ Configuration
+## Configuration
 
 | Variable | Used by | Meaning | Default |
 |---|---|---|---|
@@ -151,7 +151,7 @@ loopback only. Put it behind HTTPS when it is reachable over a network.
 | `CHECKLIST_TZ_NAME` | `8009`, `9009` | Expected time zone name | `Asia/Saigon` |
 | `CHECKLIST_SERVER_TOKEN` | `serve`, `run --upload` | Shared dashboard token | none |
 
-## 🧰 Inventory collectors
+## Inventory collectors
 
 Built into the binary; output is sorted so runs can be diffed.
 
@@ -168,7 +168,7 @@ Built into the binary; output is sorted so runs can be diffed.
 | Firewall rules | `iptables` / `ip6tables`, all tables | `netsh advfirewall` rules |
 | Log config | rsyslog configuration and status | SIEM and antivirus agent status |
 
-## 🛠️ Development
+## Development
 
 ```bash
 cd checklist && go test ./... && go vet ./...
@@ -178,7 +178,7 @@ cd .. && ./checklist/checklist lint      # catalog, output contract, README tabl
 CI runs the same checks on Linux and Windows. To add or change a control, see
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## ⚠️ Known limitations
+## Known limitations
 
 - On RHEL, SUSE and Oracle Linux, `linux.services.mta_local_only` reads only Postfix's
   `inet_interfaces`.
@@ -187,12 +187,12 @@ CI runs the same checks on Linux and Windows. To add or change a control, see
 - Windows password and lockout checks parse `net accounts` and expect an English-language Windows.
 - Oracle Linux has no inventory collector IDs.
 
-## 👤 Author
+## Author
 
 **Cao Thanh Lam** · [@Khanh1916](https://github.com/Khanh1916)
 
 Issues and pull requests are welcome.
 
-## 📄 License
+## License
 
 [MIT](LICENSE) © 2026 Cao Thanh Lam

@@ -179,3 +179,9 @@ for os in linux windows darwin; do GOOS=$os go build -o /dev/null . || echo "bui
 
 `lint` and `catalog` tests load the real `controls.yaml` and scripts, so `go test ./...` fails if
 the repository drifts from its conventions.
+
+## Author & License
+
+Developed and maintained by **Cao Thanh Lam** ([@Khanh1916](https://github.com/Khanh1916)).  
+Licensed under the [MIT License](../LICENSE).
+

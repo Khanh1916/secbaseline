@@ -32,7 +32,8 @@ func Sync(cat *catalog.Catalog, check bool) (stale []string, err error) {
 		if err != nil {
 			return stale, fmt.Errorf("%s: %w", path, err)
 		}
-		if bytes.Equal(current, updated) {
+		// Compare ignoring line endings: Windows checkouts turn LF into CRLF.
+		if bytes.Equal(bytes.ReplaceAll(current, []byte("\r\n"), []byte("\n")), updated) {
 			continue
 		}
 		stale = append(stale, filepath.ToSlash(filepath.Join(name, "README.md")))

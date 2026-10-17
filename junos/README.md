@@ -27,10 +27,17 @@ On Windows, run these from Git Bash, or pass `--shell` with the path to a `bash.
 
 ## Site-specific values
 
-Some checks encode one organization's policy. Review them before auditing your own devices:
+Two checks compare the configuration with your organization's policy. The defaults belong to the
+organization that wrote them; set these environment variables before auditing your own devices:
 
-- Time zone: `8009.sh` expects `set system time-zone Asia/Saigon`.
-- Central logging: `8013.sh` accepts only the servers in its `SIEM_SERVERS` array.
+| Variable | Check | Matches | Default |
+|---|---|---|---|
+| `CHECKLIST_TZ_NAME` | `8009.sh` | `set system time-zone <name>` | `Asia/Saigon` |
+| `CHECKLIST_SIEM_SERVERS` | `8013.sh` | at least one configured syslog server; `ip` or `ip:port`, space- or comma-separated, port defaults to 514 | `192.168.1.100:514`, `192.168.100.104:514` |
+
+```bash
+CHECKLIST_SIEM_SERVERS="10.0.0.5:514 10.0.0.6" CHECKLIST_TZ_NAME=America/New_York   ./checklist/checklist run --platform junos --config running-config.txt
+```
 
 <!-- BEGIN GENERATED: checklist docs -->
 

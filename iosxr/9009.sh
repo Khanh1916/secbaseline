@@ -71,10 +71,13 @@ if [ ! -r "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+# Expected time zone name; override with CHECKLIST_TZ_NAME (e.g. Europe/Berlin).
+TZ_NAME="${CHECKLIST_TZ_NAME:-Asia/Saigon}"
+
 # Function to check timezone configuration
 check_timezone_config() {
     # Look for exact timezone configuration
-    if grep -q "^[[:space:]]*clock[[:space:]]\+timezone[[:space:]]\+areaname[[:space:]]\+Asia/Saigon[[:space:]]*$" "$CONFIG_FILE"; then
+    if grep -q "^[[:space:]]*clock[[:space:]]\+timezone[[:space:]]\+areaname[[:space:]]\+${TZ_NAME}[[:space:]]*$" "$CONFIG_FILE"; then
         return 0
     else
         return 1

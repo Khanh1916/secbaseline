@@ -57,57 +57,44 @@ SIEM_SERVERS=(
     # Add more SIEM servers as needed
 )
 
+# Override with CHECKLIST_SIEM_SERVERS="ip[:port] ip[:port]" (space- or comma-separated).
+if [ -n "${CHECKLIST_SIEM_SERVERS:-}" ]; then
+    IFS=', ' read -r -a SIEM_SERVERS <<< "$CHECKLIST_SIEM_SERVERS"
+fi
+
 # Check arguments
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+if [ $# -ne 1 ] || [ ! -r "$1" ]; then
+    echo "Usage: $0 <readable-junos-config>" >&2
+    echo "FAIL"
     exit 1
 fi
 
 CONFIG_FILE="$1"
+LEVELS="info|notice|warning|error|critical|alert|emergency"
 
-# Check file exists and is readable
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "ERROR: File not found: $CONFIG_FILE"
-    exit 1
-fi
-
-if [ ! -r "$CONFIG_FILE" ]; then
-    echo "ERROR: Cannot read file: $CONFIG_FILE"
-    exit 1
-fi
-
-# Function to check logging configuration to SIEM servers
+# Function to check logging configuration to SIEM servers (Junos set format:
+#   set system syslog host <ip> any <level>
+#   set system syslog host <ip> port <port>)
 check_siem_logging() {
-    # Check each SIEM server in the array
     for siem_server in "${SIEM_SERVERS[@]}"; do
-        # Parse IP and PORT from server entry
-        local siem_ip=$(echo "$siem_server" | cut -d: -f1)
-        local siem_port=$(echo "$siem_server" | cut -d: -f2)
-        
-        # If no port specified, use default 514
-        if [ "$siem_ip" = "$siem_port" ]; then
-            siem_port="514"
-        fi
-        
-        # Check if there's a logging configuration for this SIEM IP
-        local logging_lines=$(grep "^logging[[:space:]]\+$siem_ip\b" "$CONFIG_FILE")
-        
-        if [ -n "$logging_lines" ]; then
-            # Found logging for this IP, now check port
-            if echo "$logging_lines" | grep -q "port[[:space:]]\+$siem_port\b"; then
-                return 0  # Found exact port match
-            elif [ "$siem_port" = "514" ] && echo "$logging_lines" | grep -q "port[[:space:]]\+default\b"; then
-                return 0  # Found default port (514) match
-            elif ! echo "$logging_lines" | grep -q "port[[:space:]]\+"; then
-                # No port specified in config, assume default 514
-                if [ "$siem_port" = "514" ]; then
-                    return 0  # Default port match
-                fi
-            fi
+        local siem_ip="${siem_server%%:*}"
+        local siem_port="${siem_server#*:}"
+        [ "$siem_port" = "$siem_server" ] && siem_port="514"
+        local ip_re="${siem_ip//./\.}"
+
+        # The host must receive messages at info level or higher
+        grep -qE "^set system syslog host ${ip_re} [a-z-]+ (${LEVELS})([[:space:]]|$)" "$CONFIG_FILE" || continue
+
+        # Port: an explicit port line must match; without one Junos uses 514
+        local port_line
+        port_line=$(grep -E "^set system syslog host ${ip_re} port [0-9]+" "$CONFIG_FILE" | awk '{print $NF}' | head -n 1)
+        if [ -n "$port_line" ]; then
+            [ "$port_line" = "$siem_port" ] && return 0
+        elif [ "$siem_port" = "514" ]; then
+            return 0
         fi
     done
-    
-    return 1  # No SIEM logging configuration found
+    return 1
 }
 
 # Main validation logic

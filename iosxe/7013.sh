@@ -45,6 +45,11 @@ SIEM_SERVERS=(
     # Add more SIEM servers as needed
 )
 
+# Override with CHECKLIST_SIEM_SERVERS="ip[:port] ip[:port]" (space- or comma-separated).
+if [ -n "${CHECKLIST_SIEM_SERVERS:-}" ]; then
+    IFS=', ' read -r -a SIEM_SERVERS <<< "$CHECKLIST_SIEM_SERVERS"
+fi
+
 config_file="$1"
 
 # Function to display usage

@@ -73,7 +73,9 @@ fi
 
 # Check both time synchronization requirements
 ntp_ok=$(grep -qE '^ntp server\s+\S+' "$config_file" && echo 1 || echo 0)
-tz_ok=$(grep -qE '^clock timezone\s+\S+\s+7(\s|$)' "$config_file" && echo 1 || echo 0)
+# Expected UTC offset in hours; override with CHECKLIST_TZ_OFFSET (e.g. -5).
+TZ_OFFSET="${CHECKLIST_TZ_OFFSET:-7}"
+tz_ok=$(grep -qE "^clock timezone\s+\S+\s+${TZ_OFFSET}(\s|\$)" "$config_file" && echo 1 || echo 0)
 
 # Final result evaluation
 if [ "$ntp_ok" -eq 1 ] && [ "$tz_ok" -eq 1 ]; then

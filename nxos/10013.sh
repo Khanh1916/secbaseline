@@ -65,6 +65,11 @@ ALLOWED_SIEM_SERVERS=(
     # Note: If no port is specified in config, default port 514 is used
 )
 
+# Override with CHECKLIST_SIEM_SERVERS="ip[:port] ip[:port]" (space- or comma-separated).
+if [ -n "${CHECKLIST_SIEM_SERVERS:-}" ]; then
+    IFS=', ' read -r -a ALLOWED_SIEM_SERVERS <<< "$CHECKLIST_SIEM_SERVERS"
+fi
+
 # Function to extract IP and PORT from logging server line
 extract_ip_port_from_logging() {
     local line="$1"

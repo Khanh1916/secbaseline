@@ -46,10 +46,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-# Function to check timezone configuration (GMT+7)
+# Expected UTC offset in hours; override with CHECKLIST_TZ_OFFSET (e.g. -5).
+TZ_OFFSET="${CHECKLIST_TZ_OFFSET:-7}"
+
+# Function to check timezone configuration (default UTC+7)
 check_timezone_config() {
     # Check for "clock timezone ... 7 0" - timezone offset +7 hours, 0 minutes
-    if grep -qi "^clock[[:space:]]\+timezone[[:space:]]\+[^[:space:]]\+[[:space:]]\+7[[:space:]]\+0" "$CONFIG_FILE"; then
+    if grep -qi "^clock[[:space:]]\+timezone[[:space:]]\+[^[:space:]]\+[[:space:]]\+${TZ_OFFSET}[[:space:]]\+0" "$CONFIG_FILE"; then
         echo "CONFIGURED"
     else
         echo "NOT_CONFIGURED"
@@ -74,7 +77,7 @@ failure_reasons=()
 timezone_status=$(check_timezone_config)
 if [ "$timezone_status" != "CONFIGURED" ]; then
     failed=true
-    failure_reasons+=("Missing or incorrect timezone configuration (required: clock timezone ... 7 0)")
+    failure_reasons+=("Missing or incorrect timezone configuration (required: clock timezone ... ${TZ_OFFSET} 0)")
 fi
 
 # Check NTP server configuration

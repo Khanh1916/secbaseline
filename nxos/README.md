@@ -27,10 +27,17 @@ On Windows, run these from Git Bash, or pass `--shell` with the path to a `bash.
 
 ## Site-specific values
 
-Some checks encode one organization's policy. Review them before auditing your own devices:
+Two checks compare the configuration with your organization's policy. The defaults belong to the
+organization that wrote them; set these environment variables before auditing your own devices:
 
-- Time zone: `10009.sh` expects `clock timezone <name> 7 0` (UTC+7).
-- Central logging: `10013.sh` accepts only the servers in its `ALLOWED_SIEM_SERVERS` array.
+| Variable | Check | Matches | Default |
+|---|---|---|---|
+| `CHECKLIST_TZ_OFFSET` | `10009.sh` | `clock timezone <name> <offset> 0` | `7` |
+| `CHECKLIST_SIEM_SERVERS` | `10013.sh` | at least one configured syslog server; `ip` or `ip:port`, space- or comma-separated, port defaults to 514 | `192.168.89.104:1514`, `192.168.89.104:514`, `192.168.89.105:1514`, `10.1.1.100:514`, `172.16.10.50:514` |
+
+```bash
+CHECKLIST_SIEM_SERVERS="10.0.0.5:514 10.0.0.6" CHECKLIST_TZ_OFFSET=-5   ./checklist/checklist run --platform nxos --config running-config.txt
+```
 
 <!-- BEGIN GENERATED: checklist docs -->
 

@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: checklist/go.mod
+          cache-dependency-path: checklist/go.sum
+
+      - name: Format
+        working-directory: checklist
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: Vet and test
+        working-directory: checklist
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Cross-compile
+        working-directory: checklist
+        run: |
+          for os in linux windows darwin; do
+            GOOS=$os GOARCH=amd64 go build -o /dev/null . || exit 1
+          done
+
+      - name: Shell syntax
+        run: |
+          status=0
+          for f in $(git ls-files '*.sh'); do bash -n "$f" || status=1; done
+          exit $status
+
+      - name: Lint catalog, scripts and READMEs
+        run: |
+          (cd checklist && go build -o /tmp/checklist .)
+          /tmp/checklist lint
+
+      - name: Audit sample network configurations
+        run: |
+          for pair in iosxe:iosxe/iosxe.cfg iosxe:iosxe/cat8k.cfg junos:junos/jsw.cfg iosxr:iosxr/asr9k.cfg nxos:nxos/n9k.cfg; do
+            platform=${pair%%:*}; config=${pair#*:}
+            /tmp/checklist run -p "$platform" -c "$config" -o report.json
+            errors=$(jq '.summary.error' report.json)
+            if [ "$errors" != "0" ]; then
+              jq '.checks[] | select(.status == "error")' report.json
+              exit 1
+            fi
+          done
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: checklist/go.mod
+          cache-dependency-path: checklist/go.sum
+
+      - name: Test
+        working-directory: checklist
+        run: go test ./...
+
+      - name: Lint
+        shell: bash
+        run: |
+          (cd checklist && go build -o "$RUNNER_TEMP/checklist.exe" .)
+          "$RUNNER_TEMP/checklist.exe" lint

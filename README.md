@@ -155,6 +155,20 @@ A JSON report contains the platform, the machine the run happened on, the audite
   hostname parsed from it.
 - `schema_version` changes only when the layout changes incompatibly.
 
+## Site configuration
+
+A few network checks compare a device with an organization's own policy. They default to the values
+of the organization that wrote them and read overrides from the environment, which `checklist run`
+passes through to every script:
+
+| Variable | Used by | Meaning |
+|---|---|---|
+| `CHECKLIST_SIEM_SERVERS` | `7013`, `8013`, `9013`, `10013` | Accepted syslog/SIEM servers, `ip` or `ip:port`, space- or comma-separated |
+| `CHECKLIST_TZ_OFFSET` | `7009`, `10009` | Expected UTC offset in hours (IOS XE, NX-OS) |
+| `CHECKLIST_TZ_NAME` | `8009`, `9009` | Expected time zone name (Junos, IOS XR) |
+
+Each network directory's README lists its defaults.
+
 ## The catalog: `controls.yaml`
 
 ```yaml
@@ -194,7 +208,9 @@ collectors:
 
 ## Development
 
-Requirements: Go 1.24+, `bash`. On Windows, use Git Bash for the shell scripts.
+Requirements: Go 1.24+, `bash`. On Windows, use Git Bash for the shell scripts. GitHub Actions
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same tests, lint and sample audits
+on Linux and Windows for every push and pull request.
 
 ```bash
 cd checklist
@@ -235,7 +251,5 @@ These come from reviewing the check logic. They are not fixed yet.
   local`; a default list that uses TACACS+ or RADIUS falls back to the per-line checks.
 - IOS XE `7008` (centralized AAA) recognizes `group radius` and `group tacacs+`, not named server
   groups (`aaa group server`).
-- Network checks encode one organization's time zone (UTC+7) and SIEM server list. See each network
-  directory's README.
 - Windows password and lockout checks parse `net accounts` and expect an English-language Windows.
 - Oracle Linux has no inventory collector IDs.

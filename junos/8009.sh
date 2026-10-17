@@ -42,7 +42,9 @@ CONFIG="$1"
 [ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
 
 # Check time-zone
-if ! grep -qE "^set system time-zone Asia/Saigon" "$CONFIG"; then
+# Expected time zone name; override with CHECKLIST_TZ_NAME (e.g. Europe/Berlin).
+TZ_NAME="${CHECKLIST_TZ_NAME:-Asia/Saigon}"
+if ! grep -qE "^set system time-zone ${TZ_NAME}([[:space:]]|\$)" "$CONFIG"; then
     echo "FAIL"
     exit 1
 fi

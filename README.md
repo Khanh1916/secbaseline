@@ -231,10 +231,13 @@ These come from reviewing the check logic. They are not fixed yet.
 - `linux.services.mta_local_only` on the RHEL family, SUSE and Oracle Linux reads only Postfix's
   `inet_interfaces`, so it fails when Postfix is not installed and ignores other MTAs. Ubuntu and
   Debian check the listening sockets instead.
-- Several network checks pass on an empty configuration: IOS XE `7003`, `7007` and `7008`; Junos
-  `8004`, `8005` and `8010`; IOS XR `9004` and `9005`; NX-OS `10007` and `10011`. Some are
-  deliberate ("not applicable" when nothing is configured); others, such as `7008` (centralized AAA),
-  likely hide a gap.
+- Several network checks pass on an empty configuration: Junos `8004`, `8005` and `8010`; IOS XR
+  `9004` and `9005`; NX-OS `10007` and `10011`. Here a missing setting is deliberate ("not
+  applicable" or a secure default), but an empty file should not pass.
+- IOS XE `7007` (console authentication) accepts AAA only as `aaa authentication login default
+  local`; a default list that uses TACACS+ or RADIUS falls back to the per-line checks.
+- IOS XE `7008` (centralized AAA) recognizes `group radius` and `group tacacs+`, not named server
+  groups (`aaa group server`).
 - Network checks encode one organization's time zone (UTC+7) and SIEM server list. See each network
   directory's README.
 - Windows password and lockout checks parse `net accounts` and expect an English-language Windows.

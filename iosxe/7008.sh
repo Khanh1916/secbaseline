@@ -19,8 +19,8 @@
 # Validation Logic:
 # 
 # 1. AAA Model Check:
-#    - If "aaa new-model" not configured -> PASS (AAA not in use)
-#    - AAA disabled means legacy authentication acceptable
+#    - If "aaa new-model" not configured -> FAIL (no centralized AAA;
+#      every line authenticates locally or with a line password)
 #
 # 2. Remote Authentication Method Detection:
 #    - Searches for: "aaa authentication login <method> group radius"
@@ -29,7 +29,9 @@
 #
 # 3. VTY Line Validation:
 #    - All line vty blocks must use: "login authentication <method>"
-#    - Method name must match the one defined in AAA configuration
+#    - Method name must match one defined in AAA configuration; a block
+#      without "login authentication" uses the "default" list
+#    - No line vty block -> FAIL
 #    - Ensures consistent remote authentication across all VTY sessions
 #
 # Security Compliance:
@@ -63,50 +65,58 @@ if [ ! -f "$config_file" ]; then
   exit 1
 fi
 
-# If aaa new-model is not configured then PASS
-if ! grep -qE '^aaa new-model(\s|$)' "$config_file"; then
-  echo "PASS"
-  exit 0
-fi
-
-# Find authentication method using group radius or tacacs+
-method=$(grep -E '^aaa authentication login [^ ]+ group (radius|tacacs\+)' "$config_file" | awk '{print $4}')
-
-if [ -z "$method" ]; then
+# Without aaa new-model there is no centralized AAA
+if ! grep -qE '^aaa new-model([[:space:]]|$)' "$config_file"; then
   echo "FAIL"
   exit 1
 fi
 
-# Check that line vty blocks have login authentication <method>
-awk -v method="$method" '
-  BEGIN { block=""; in_block=0; found=0; }
+# Find authentication method lists using group radius or tacacs+
+methods=$(grep -E '^aaa authentication login [^ ]+ group (radius|tacacs\+)' "$config_file" | awk '{print $4}' | sort -u | tr '\n' ' ')
+
+if [ -z "$methods" ]; then
+  echo "FAIL"
+  exit 1
+fi
+
+# Check that every line vty block uses one of those method lists
+if awk -v methods="$methods" '
+  BEGIN {
+    n = split(methods, m, " ");
+    for (i = 1; i <= n; i++) central[m[i]] = 1;
+    in_block = 0; blocks = 0; bad = 0;
+  }
+
+  function close_block() {
+    if (!in_block) return;
+    if (!((list == "" ? "default" : list) in central)) bad++;
+    in_block = 0;
+  }
 
   /^line vty/ {
+    close_block();
     in_block = 1;
-    block = $0;
+    blocks++;
+    list = "";
     next;
   }
 
-  /^line / {
-    if (in_block) {
-      if (block ~ ("login authentication " method)) found++;
-      in_block = 0;
-      block = "";
-    }
+  /^[^ ]/ {
+    close_block();
   }
 
-  {
-    if (in_block) block = block "\n" $0;
+  in_block && /^ +login authentication / {
+    list = $3;
   }
 
   END {
-    if (in_block && block ~ ("login authentication " method)) found++;
-
-    if (found == 0) {
-      print "FAIL";
-      exit 1;
-    } else {
-      print "PASS";
-    }
+    close_block();
+    exit (blocks == 0 || bad > 0) ? 1 : 0;
   }
-' "$config_file"
+' "$config_file"; then
+  echo "PASS"
+  exit 0
+else
+  echo "FAIL"
+  exit 1
+fi

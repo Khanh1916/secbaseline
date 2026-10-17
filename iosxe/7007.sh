@@ -28,7 +28,9 @@
 #      * login local OR  
 #      * login authentication <method>
 #    - If line blocks exist without authentication -> FAIL
-#    - If no line blocks configured -> PASS (not applicable)
+#    - No line con block -> FAIL (IOS XE always lists line con 0; a console
+#      without login settings does not authenticate)
+#    - No line aux block -> not applicable (many platforms have no AUX port)
 #
 # Security Compliance:
 # - Prevents unauthorized device access via console/auxiliary ports
@@ -60,21 +62,23 @@ if grep -q "^aaa authentication login default local" "$config_file" && \
   exit 0
 fi
 
-# Function to check line block (con or aux)
+# Function to check line block (con or aux); required=1 makes a missing block FAIL
 check_line_block() {
   local type="$1"
-  awk -v type="$type" '
+  local required="$2"
+  awk -v type="$type" -v required="$required" '
     BEGIN { in_block = 0; found = 0; valid = 0; }
 
     # Start of line type block
     $0 ~ "^line "type {
       in_block = 1;
+      found = 1;
       block = $0;
       next;
     }
 
-    # New block encountered -> end current block
-    /^line / {
+    # Any other top-level command ends the current block
+    /^[^ ]/ {
       in_block = 0;
     }
 
@@ -83,13 +87,12 @@ check_line_block() {
       if ($0 ~ /^ ?password / || $0 ~ /^ ?login local/ || $0 ~ /^ ?login authentication /) {
         valid = 1;
       }
-      found = 1;
     }
 
     END {
-      # If no block found -> PASS
+      # No block: FAIL when required, otherwise not applicable
       if (found == 0) {
-        exit 0;
+        exit required ? 1 : 0;
       }
       # If block exists but missing required authentication -> FAIL
       if (valid == 0) {
@@ -100,10 +103,10 @@ check_line_block() {
 }
 
 # Check each line type
-check_line_block "con"
+check_line_block "con" 1
 res_con=$?
 
-check_line_block "aux"
+check_line_block "aux" 0
 res_aux=$?
 
 # Aggregate results

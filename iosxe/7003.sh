@@ -36,7 +36,9 @@
 # - Scans all line con and line vty configuration blocks
 # - Each block must contain "exec-timeout 5 0" command
 # - Missing timeout in any block results in FAIL
-# - If no line blocks configured -> PASS (not applicable)
+# - At least one line con and one line vty block must exist -> otherwise FAIL
+#   (IOS XE always lists them; without them the timeout cannot be verified
+#   and the default is 10 minutes)
 #
 # Compliance Standards:
 # - Follows Cisco IOS-XE security hardening best practices
@@ -63,13 +65,14 @@ config_file="$1"
 
 awk '
   BEGIN {
-    block = ""; in_block = 0; block_header = "";
+    block = ""; in_block = 0; block_header = ""; seen_con = 0; seen_vty = 0;
   }
 
   /^line (con|vty)/ {
     if (in_block && block !~ /exec-timeout 5 0/) {
       exit 1;
     }
+    if ($2 ~ /^con/) seen_con = 1; else seen_vty = 1;
     in_block = 1;
     block_header = $0;
     block = $0;
@@ -91,6 +94,9 @@ awk '
 
   END {
     if (in_block && block ~ /^line (con|vty)/ && block !~ /exec-timeout 5 0/) {
+      exit 1;
+    }
+    if (!seen_con || !seen_vty) {
       exit 1;
     }
   }

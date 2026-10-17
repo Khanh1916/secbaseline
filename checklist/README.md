@@ -8,6 +8,8 @@ scripts follow the repository's conventions.
 |---|---|
 | `checklist run` | Run every check (and collector) for one platform; write a JSON report and optionally HTML |
 | `checklist report <file.json>` | Render a saved JSON report as a self-contained HTML page |
+| `checklist diff <old.json> <new.json>` | Compare two reports: regressions, fixes, other status changes and inventory drift |
+| `checklist serve` | Web dashboard that receives reports from `run --upload` and tracks every host over time |
 | `checklist lint` | Validate `controls.yaml`, the scripts' output contract and the README tables |
 | `checklist docs` | Regenerate the control tables in each platform README from `controls.yaml` |
 | `checklist <id>` | Run one inventory collector and print its raw output (the original interface) |
@@ -53,6 +55,8 @@ sudo ./checklist/checklist run --only linux.ssh,linux.auth --no-collectors
 | `--no-collectors` | false | Skip inventory collectors. |
 | `-F, --files` / `-f, --folders` | | Inputs for the checksum and file-listing collectors; without them those collectors are `skipped`. |
 | `--shell` | `bash` | Interpreter for `.sh` scripts (useful on Windows: point it at Git Bash). |
+| `--upload` | | Send the report to a dashboard started with `checklist serve`, e.g. `http://dashboard:8080`. |
+| `--token` | `$CHECKLIST_SERVER_TOKEN` | Token for `--upload`. |
 | `--root` | auto | Repository root. By default the current directory, its parent, the binary's directory and its parent are searched for `controls.yaml`. |
 
 The runner prints a one-line summary to stderr and exits `0` when the run completed, whatever the
@@ -72,6 +76,34 @@ requires the exit code to agree:
 
 Scripts run with `LC_ALL=C` so the command output they parse is in English, with the platform
 directory as working directory. Output is capped at 1 MiB per stream.
+
+## `checklist diff`
+
+| Flag | Meaning |
+|---|---|
+| `--json` | Print the comparison as JSON instead of text |
+| `--exit-code` | Exit `2` when there are regressions, other status changes or inventory changes |
+
+Checks are matched by key. `pass -> fail` is a regression, `fail -> pass` is a fix, and anything
+involving `error` or a check that exists in only one report is listed under other changes.
+Collector output is compared as a set of lines.
+
+## `checklist serve`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--listen` | `127.0.0.1:8080` | Address to listen on. Anything other than loopback requires a token. |
+| `--data` | `secbaseline-data` | Directory where reports are stored, as `<platform>_<host>/<timestamp>-<hash>.json`. |
+| `--token` | `$CHECKLIST_SERVER_TOKEN` | Shared secret: `Authorization: Bearer <token>` for the API, HTTP Basic (any user, token as password) for browsers. |
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/reports` | Store a report (the JSON written by `checklist run`, up to 32 MiB). Returns `201` with its URL. |
+| `GET /api/subjects` | Latest summary, score change and regression count for every host and device, as JSON. |
+| `GET /` | Overview, worst first. |
+| `GET /s/<subject>` | One host or device: score trend, changes since the previous report, history. |
+| `GET /s/<subject>/<file>` | A stored report rendered as HTML. |
+| `GET /healthz` | Liveness check (no authentication). |
 
 ## Inventory collectors
 
@@ -101,6 +133,8 @@ The firewall collector calls `sudo`; run the binary as root so it does not wait 
 | `catalog/` | Loads `controls.yaml`; script paths; per-platform selection |
 | `runner/` | Executes scripts, parses verdicts, detects the platform, defines the JSON report |
 | `report/` | HTML rendering (`template.html` is embedded into the binary) |
+| `drift/` | Report comparison used by `diff` and the dashboard |
+| `server/` | Dashboard: file-based report store, HTTP handlers, embedded `dashboard.html` |
 | `lint/` | Catalog and script-contract validation |
 | `docs/` | README table generation |
 | `collector/` | Maps collector IDs to the inventory packages |

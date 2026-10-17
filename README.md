@@ -1,4 +1,4 @@
-# Technical Cybersecurity Checklist
+# secbaseline
 
 Security hardening checks for Linux servers, Windows hosts and network devices, with one command-line
 tool that runs them and produces machine-readable (JSON) and human-readable (HTML) compliance reports.
@@ -11,6 +11,8 @@ tool that runs them and produces machine-readable (JSON) and human-readable (HTM
   `checklist lint` enforces the repository's conventions.
 - **Inventory for baselining**: built-in collectors record SSH keys, accounts, groups, listening
   ports, firewall rules and file hashes as sorted text that can be diffed between runs.
+- **Drift detection and a dashboard**: `checklist diff` shows what got worse between two reports,
+  and `checklist serve` collects reports from many hosts and tracks each one's score over time.
 - **One output contract**: every script reports the same way, which `checklist lint` and the Go
   tests enforce.
 
@@ -47,8 +49,8 @@ and `checklist.exe` (Windows x86-64). Run them from the repository root.
 **Linux host.** Run as root; the distribution is detected automatically.
 
 ```bash
-git clone https://github.com/Khanh1916/technical-cybersec-checklist.git
-cd technical-cybersec-checklist
+git clone https://github.com/Khanh1916/secbaseline.git
+cd secbaseline
 sudo ./checklist/checklist run --html report.html -o report.json
 ```
 
@@ -155,6 +157,41 @@ A JSON report contains the platform, the machine the run happened on, the audite
   hostname parsed from it.
 - `schema_version` changes only when the layout changes incompatibly.
 
+## Drift detection and dashboard
+
+**Compare two reports.** Checks are matched by key, so a regression is reported even when script
+IDs differ between platforms. Inventory is compared line by line: a new SSH key, account, listening
+port or firewall rule shows up as an added line. The two reports can come from different hosts, for
+example a golden image and a production server.
+
+```bash
+./checklist/checklist diff baseline.json today.json
+./checklist/checklist diff --exit-code yesterday.json today.json || echo "drift detected"
+```
+
+`--exit-code` exits `2` when there are regressions, other status changes or inventory changes;
+`--json` prints the comparison for other tools.
+
+**Collect reports centrally.** `checklist serve` is a small web dashboard with no database: reports
+are stored as JSON files, one directory per host or device and platform.
+
+```bash
+# On the dashboard server
+CHECKLIST_SERVER_TOKEN=change-me ./checklist/checklist serve --listen 0.0.0.0:8080 --data /var/lib/secbaseline
+
+# On each host (for example from cron)
+sudo CHECKLIST_SERVER_TOKEN=change-me ./checklist/checklist run --upload http://dashboard:8080 -o /dev/null
+```
+
+The overview lists every host and device, worst first, with its latest score, the change since its
+previous report and the number of regressions. Each host's page shows the score trend, what changed
+since the previous report, and every stored report rendered as HTML.
+
+With a token, every request needs it: API clients send `Authorization: Bearer <token>`, browsers
+log in with any user name and the token as password. Without a token the dashboard refuses to
+listen on anything but loopback. Put it behind HTTPS (a reverse proxy) when it is reachable over a
+network, since the token is otherwise sent in clear text.
+
 ## Site configuration
 
 A few network checks compare a device with an organization's own policy. They default to the values
@@ -197,7 +234,7 @@ collectors:
 ```text
 .
 ├── controls.yaml        catalog of every control and collector
-├── checklist/           Go CLI: runner, reports, lint, collectors (see checklist/README.md)
+├── checklist/           Go CLI: runner, reports, diff, dashboard, lint, collectors (see checklist/README.md)
 ├── ubuntu/ debian/      Debian-family checks
 ├── redhat/ rocky/ centos/ oraclelinux/ suse/
 │                        RHEL-family and SUSE checks

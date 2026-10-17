@@ -15,9 +15,11 @@ import (
 	"checklist/catalog"
 	"checklist/collector"
 	"checklist/docs"
+	"checklist/drift"
 	"checklist/lint"
 	"checklist/report"
 	"checklist/runner"
+	"checklist/server"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -37,6 +39,8 @@ host inventory.
   checklist <id>       run one inventory collector and print its output
   checklist run        run every check for a platform and write a JSON/HTML report
   checklist report     render a saved JSON report as HTML
+  checklist diff       compare two reports: regressions, fixes and inventory drift
+  checklist serve      dashboard that collects reports from many hosts
   checklist lint       validate controls.yaml, the scripts' output contract and the READMEs
   checklist docs       regenerate the control tables in each platform README`,
 	Args:          cobra.ExactArgs(1),
@@ -55,7 +59,7 @@ host inventory.
 func init() {
 	rootCmd.PersistentFlags().StringSliceVarP(&folders, "folders", "f", nil, "folders to list (file listing collector)")
 	rootCmd.PersistentFlags().StringSliceVarP(&files, "files", "F", nil, "files to hash (file checksum collector)")
-	rootCmd.AddCommand(runCmd(), reportCmd(), lintCmd(), docsCmd(), versionCmd())
+	rootCmd.AddCommand(runCmd(), reportCmd(), diffCmd(), serveCmd(), lintCmd(), docsCmd(), versionCmd())
 }
 
 func main() {
@@ -81,6 +85,7 @@ func findRoot(flag string) (string, error) {
 func runCmd() *cobra.Command {
 	var (
 		root, platform, config, jsonOut, htmlOut, shell string
+		uploadURL, token                                string
 		only                                            []string
 		jobs                                            int
 		timeout                                         time.Duration
@@ -134,6 +139,20 @@ func runCmd() *cobra.Command {
 					return werr
 				}
 			}
+			if uploadURL != "" {
+				body, merr := json.Marshal(rep)
+				if merr != nil {
+					return merr
+				}
+				if token == "" {
+					token = server.TokenFromEnv()
+				}
+				url, uerr := server.Upload(context.Background(), uploadURL, token, body)
+				if uerr != nil {
+					return uerr
+				}
+				fmt.Fprintln(os.Stderr, "uploaded:", url)
+			}
 			s := rep.Summary
 			fmt.Fprintf(os.Stderr, "%s: %d checks, %d passed, %d failed, %d errors (score %.1f%%)\n",
 				rep.Platform.Key, s.Total, s.Pass, s.Fail, s.Error, s.Score)
@@ -151,6 +170,85 @@ func runCmd() *cobra.Command {
 	f.BoolVar(&noCollectors, "no-collectors", false, "skip inventory collectors")
 	f.StringVarP(&jsonOut, "output", "o", "-", `JSON report path ("-" for stdout)`)
 	f.StringVar(&htmlOut, "html", "", "also write an HTML report to this path")
+	f.StringVar(&uploadURL, "upload", "", "send the report to a dashboard (checklist serve) at this URL")
+	f.StringVar(&token, "token", "", "dashboard token (default: $CHECKLIST_SERVER_TOKEN)")
+	return cmd
+}
+
+func diffCmd() *cobra.Command {
+	var asJSON, exitCode bool
+	cmd := &cobra.Command{
+		Use:   "diff <old.json> <new.json>",
+		Short: "Compare two reports: regressions, fixes and inventory changes",
+		Long: `Compare two reports from checklist run. Checks are matched by key; collector
+output is compared line by line, so new SSH keys, accounts, listening ports or
+firewall rules show up as added lines. The reports may come from different
+hosts, e.g. a golden baseline and a production server.`,
+		Example: `  checklist diff baseline.json today.json
+  checklist diff --exit-code yesterday.json today.json || alert "drift on web01"`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			old, err := report.LoadJSON(args[0])
+			if err != nil {
+				return err
+			}
+			cur, err := report.LoadJSON(args[1])
+			if err != nil {
+				return err
+			}
+			res := drift.Compare(old, cur)
+			if asJSON {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				if err := enc.Encode(res); err != nil {
+					return err
+				}
+			} else {
+				drift.WriteText(os.Stdout, res)
+			}
+			if exitCode && res.HasDrift() {
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "print the comparison as JSON")
+	cmd.Flags().BoolVar(&exitCode, "exit-code", false, "exit 2 when there are regressions, other changes or inventory drift")
+	return cmd
+}
+
+func serveCmd() *cobra.Command {
+	var addr, dataDir, token string
+	cmd := &cobra.Command{
+		Use:   "serve",
+		Short: "Run a dashboard that collects reports from many hosts",
+		Long: `Run a small web dashboard. Hosts send reports with
+  checklist run --upload http://<server>:8080 --token <token>
+and the dashboard shows each host's latest score, its trend, and what changed
+since its previous report. Reports are stored as JSON files under --data.
+
+With --token (or $CHECKLIST_SERVER_TOKEN) every request needs the token: API
+clients send "Authorization: Bearer <token>", browsers log in with any user name
+and the token as password. Without a token the dashboard only listens on loopback.`,
+		Example: `  checklist serve --data ./reports
+  CHECKLIST_SERVER_TOKEN=s3cret checklist serve --listen 0.0.0.0:8080 --data /var/lib/secbaseline`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if token == "" {
+				token = server.TokenFromEnv()
+			}
+			srv, err := server.New(server.Config{Addr: addr, DataDir: dataDir, Token: token, Version: version})
+			if err != nil {
+				return err
+			}
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+			return srv.ListenAndServe(ctx)
+		},
+	}
+	cmd.Flags().StringVar(&addr, "listen", "127.0.0.1:8080", "address to listen on")
+	cmd.Flags().StringVar(&dataDir, "data", "secbaseline-data", "directory where reports are stored")
+	cmd.Flags().StringVar(&token, "token", "", "shared token required for every request (default: $CHECKLIST_SERVER_TOKEN)")
 	return cmd
 }
 

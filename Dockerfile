@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build the checklist binary for the target platform.
-FROM --platform=$BUILDPLATFORM golang:1.24-bookworm AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-bookworm AS build
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=dev

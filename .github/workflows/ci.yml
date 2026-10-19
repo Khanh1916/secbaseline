@@ -12,9 +12,9 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: checklist/go.mod
           cache-dependency-path: checklist/go.sum
@@ -62,9 +62,9 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: checklist/go.mod
           cache-dependency-path: checklist/go.sum
@@ -78,3 +78,29 @@ jobs:
         run: |
           (cd checklist && go build -o "$RUNNER_TEMP/checklist.exe" .)
           "$RUNNER_TEMP/checklist.exe" lint
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build image
+        run: docker build --build-arg VERSION=ci -t secbaseline:ci .
+
+      - name: Lint and audit inside the image
+        run: |
+          docker run --rm secbaseline:ci version
+          docker run --rm secbaseline:ci lint
+          errors=$(docker run --rm -v "$PWD/nxos:/cfg:ro" secbaseline:ci \
+            run -p nxos -c /cfg/n9k.cfg -o - 2>/dev/null | jq '.summary.error')
+          test "$errors" = "0"
+
+      - name: Dashboard starts and accepts a report
+        run: |
+          docker run -d --name dash -p 8080:8080 -e CHECKLIST_SERVER_TOKEN=ci-token \
+            secbaseline:ci serve --listen 0.0.0.0:8080 --data /data
+          for i in $(seq 1 20); do curl -fs http://127.0.0.1:8080/healthz && break; sleep 1; done
+          docker run --rm -v "$PWD/iosxe:/cfg:ro" --network host -e CHECKLIST_SERVER_TOKEN=ci-token secbaseline:ci \
+            run -p iosxe -c /cfg/iosxe.cfg -o /dev/null --upload http://127.0.0.1:8080
+          curl -fs -H "Authorization: Bearer ci-token" http://127.0.0.1:8080/api/subjects | jq -e 'length == 1'
+          docker rm -f dash

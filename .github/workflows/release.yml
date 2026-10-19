@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  archives:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: checklist/go.mod
+          cache-dependency-path: checklist/go.sum
+
+      - name: Test
+        working-directory: checklist
+        run: go test ./...
+
+      - name: Build archives
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          prefix="secbaseline-${version}"
+          mkdir -p dist
+          for target in linux/amd64 linux/arm64 windows/amd64; do
+            os=${target%/*}; arch=${target#*/}
+            bin=checklist; [ "$os" = windows ] && bin=checklist.exe
+            stage=$(mktemp -d)
+            git archive --prefix="${prefix}/" HEAD | tar -x -C "$stage"
+            rm -f "$stage/$prefix/checklist/checklist" "$stage/$prefix/checklist/checklist.exe"
+            (cd checklist && GOOS=$os GOARCH=$arch CGO_ENABLED=0 \
+              go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "$stage/$prefix/checklist/$bin" .)
+            chmod 0755 "$stage/$prefix/checklist/$bin"
+            if [ "$os" = windows ]; then
+              (cd "$stage" && zip -qr "$GITHUB_WORKSPACE/dist/${prefix}-${os}-${arch}.zip" "$prefix")
+            else
+              tar -czf "dist/${prefix}-${os}-${arch}.tar.gz" -C "$stage" "$prefix"
+            fi
+          done
+          (cd dist && sha256sum * > checksums.txt && cat checksums.txt)
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "secbaseline $GITHUB_REF_NAME" --generate-notes --verify-tag
+
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/secbaseline
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: VERSION=${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

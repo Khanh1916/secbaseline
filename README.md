@@ -85,7 +85,15 @@ On Windows, run from an elevated PowerShell:
 .\checklist\checklist.exe run --html report.html -o report.json
 ```
 
-Every command and flag is documented in [`checklist/README.md`](checklist/README.md).
+A container image is published to GitHub Packages for the dashboard and offline network audits:
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" ghcr.io/khanh1916/secbaseline \
+  run --platform iosxe --config running-config.txt --html audit.html
+```
+
+Host checks inspect the machine they run on, so run those with the binary on the host, not in a
+container. Every command and flag is documented in [`checklist/README.md`](checklist/README.md).
 
 ## Screenshots
 
@@ -135,6 +143,13 @@ CHECKLIST_SERVER_TOKEN=change-me ./checklist/checklist serve --listen 0.0.0.0:80
 
 # Each host, e.g. from cron
 sudo CHECKLIST_SERVER_TOKEN=change-me ./checklist/checklist run --upload http://dashboard:8080 -o /dev/null
+```
+
+Or run the dashboard from the container image:
+
+```bash
+docker run -d --name secbaseline -p 8080:8080 -v secbaseline-data:/data -e CHECKLIST_SERVER_TOKEN=change-me \
+  ghcr.io/khanh1916/secbaseline serve --listen 0.0.0.0:8080 --data /data
 ```
 
 The overview lists hosts and devices worst first. Each host page shows the score trend, the
@@ -191,7 +206,8 @@ CI runs the same checks on Linux and Windows. To add or change a control, see
 
 **Cao Thanh Lam** · [@Khanh1916](https://github.com/Khanh1916)
 
-Issues and pull requests are welcome.
+Issues and pull requests are welcome. Report security problems privately as described in
+[SECURITY.md](SECURITY.md).
 
 ## License
 

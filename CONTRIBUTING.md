@@ -79,3 +79,16 @@ and exit `0` or `1`. An empty or comment-only configuration must fail.
 - Script IDs are identities in downstream systems: never renumber, add new IDs instead.
 - Organization-specific values (servers, time zones) are read from `CHECKLIST_*` environment
   variables with a default, not hard-coded.
+
+## Releasing
+
+Push a version tag; the [release workflow](.github/workflows/release.yml) does the rest:
+
+```bash
+git tag -a v0.2.0 -m "secbaseline 0.2.0" && git push origin v0.2.0
+```
+
+It runs the tests, builds the Linux (amd64, arm64) and Windows (amd64) archives with
+`checklist version` set from the tag, publishes them with `checksums.txt` as a GitHub Release, and
+pushes a multi-architecture image to `ghcr.io/khanh1916/secbaseline` tagged with the version,
+`<major>.<minor>` and `latest`.

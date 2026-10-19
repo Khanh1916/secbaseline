@@ -1,0 +1,16 @@
+name: Feature or new control
+description: Propose a new check, platform or feature
+labels: [enhancement]
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should be added? For a new control, name the benchmark item (e.g. CIS section) and the platforms it applies to.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: The problem it solves or the risk it detects.

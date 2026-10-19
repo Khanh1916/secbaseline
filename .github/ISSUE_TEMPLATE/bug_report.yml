@@ -1,0 +1,40 @@
+name: Bug report
+description: A check gives a wrong verdict, or the CLI or dashboard misbehaves
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For security vulnerabilities, report privately instead (see SECURITY.md).
+        Remove hostnames, IP addresses and secrets from anything you paste.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `checklist version`, or the commit you built from.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: For example "Rocky Linux 9.4", "Windows Server 2022", "Cisco IOS XE 17.9".
+    validations:
+      required: true
+  - type: input
+    id: control
+    attributes:
+      label: Control key or script ID
+      description: For example `linux.ssh.ssh_root_login_disabled` or `3076`. Leave empty if not about a check.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: For a wrong verdict, include the relevant configuration and the check's output.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      render: bash

@@ -17,7 +17,7 @@ scripts follow the repository's conventions.
 
 ## Build
 
-Requires Go 1.24 or newer.
+Requires Go 1.26 or newer (an older `go` downloads the 1.26 toolchain automatically).
 
 ```bash
 cd checklist

@@ -2,7 +2,7 @@
 
 ## Setup
 
-Go 1.24+ and `bash` (Git Bash on Windows).
+Go 1.26+ and `bash` (Git Bash on Windows).
 
 ```bash
 cd checklist

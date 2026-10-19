@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/Khanh1916/secbaseline/actions/workflows/ci.yml/badge.svg)](https://github.com/Khanh1916/secbaseline/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Khanh1916/secbaseline?style=flat-square)](https://github.com/Khanh1916/secbaseline/releases/latest)
-[![Go](https://img.shields.io/badge/Go-1.24%2B-00ADD8?style=flat-square&logo=go&logoColor=white)](checklist/go.mod)
+[![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat-square&logo=go&logoColor=white)](checklist/go.mod)
 [![Controls](https://img.shields.io/badge/controls-131-blueviolet?style=flat-square)](controls.yaml)
 [![Platforms](https://img.shields.io/badge/platforms-12-007ACC?style=flat-square)](#coverage)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)

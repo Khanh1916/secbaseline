@@ -1,0 +1,3 @@
+#!/bin/bash
+# Source-routed packets are rejected.
+sysctl -qw net.ipv4.conf.all.accept_source_route=0 net.ipv4.conf.default.accept_source_route=0 net.ipv6.conf.all.accept_source_route=0 net.ipv6.conf.default.accept_source_route=0

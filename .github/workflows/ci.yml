@@ -164,6 +164,18 @@ jobs:
           jq '.checks[0] | {id, status, message}' after.json
           jq -e '.checks[0].status == "fail"' after.json
 
+      # Each case (<platform>/testdata/<id>/{pass,fail}-*.sh) sets up a new
+      # container of the image and checks the verdict; see linux_cases_test.go.
+      - name: Verdict cases on ${{ matrix.image }}
+        working-directory: checklist
+        shell: bash
+        env:
+          CHECKLIST_CASES_PLATFORM: ${{ matrix.platform }}
+          CHECKLIST_CASES_IMAGE: ${{ matrix.image }}
+        run: |
+          go test -count=1 -timeout 60m -parallel 8 -run TestLinuxCases -v ./runner |
+            grep -Ev '^ *(=== (RUN|PAUSE|CONT)|--- PASS)'
+
   docker:
     runs-on: ubuntu-latest
     steps:

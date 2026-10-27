@@ -380,6 +380,60 @@ controls:
   - key: windows.backup.policy
     title: Ensure a Windows Server Backup policy is configured
     ids: {windows: 4026}
+  - key: windows.network.smb1_disabled
+    title: Ensure the SMBv1 server protocol is disabled
+    ids: {windows: 4037}
+  - key: windows.network.smb_signing_required
+    title: Ensure the SMB server requires message signing
+    ids: {windows: 4038}
+  - key: windows.remote.rdp_nla_required
+    title: Ensure Remote Desktop requires Network Level Authentication
+    ids: {windows: 4039}
+  - key: windows.firewall.all_profiles_enabled
+    title: Ensure Windows Firewall is enabled for all profiles
+    ids: {windows: 4040}
+  - key: windows.uac.enabled
+    title: Ensure User Account Control is enabled
+    ids: {windows: 4041}
+  - key: windows.uac.admin_consent_prompt
+    title: Ensure UAC prompts administrators for consent on the secure desktop
+    ids: {windows: 4042}
+  - key: windows.network.llmnr_disabled
+    title: Ensure LLMNR (multicast name resolution) is disabled
+    ids: {windows: 4043}
+  - key: windows.credentials.wdigest_disabled
+    title: Ensure WDigest does not store plaintext credentials
+    ids: {windows: 4044}
+  - key: windows.credentials.lsa_protection
+    title: Ensure LSA protection (RunAsPPL) is enabled
+    ids: {windows: 4045}
+  - key: windows.network.anonymous_enumeration_restricted
+    title: Ensure anonymous enumeration of accounts and shares is restricted
+    ids: {windows: 4046}
+  - key: windows.network.ntlmv2_only
+    title: Ensure LAN Manager authentication accepts NTLMv2 only
+    ids: {windows: 4047}
+  - key: windows.hardening.autorun_disabled
+    title: Ensure AutoPlay is turned off for all drives
+    ids: {windows: 4048}
+  - key: windows.services.remote_registry_disabled
+    title: Ensure the Remote Registry service is disabled
+    ids: {windows: 4049}
+  - key: windows.logging.powershell_script_block
+    title: Ensure PowerShell script block logging is enabled
+    ids: {windows: 4050}
+  - key: windows.logging.security_log_size
+    title: Ensure the Security event log is at least 196608 KB
+    ids: {windows: 4051}
+  - key: windows.encryption.bitlocker_os_drive
+    title: Ensure BitLocker protects the operating system drive
+    ids: {windows: 4052}
+  - key: windows.accounts.administrator_renamed
+    title: Ensure the built-in Administrator account is renamed
+    ids: {windows: 4053}
+  - key: windows.session.inactivity_limit
+    title: Ensure the machine inactivity limit is 900 seconds or less
+    ids: {windows: 4054}
   - key: network.hostname
     title: Ensure a non-default hostname is configured
     ids: {iosxe: 7001, junos: 8001, iosxr: 9001, nxos: 10001}

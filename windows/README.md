@@ -1,6 +1,6 @@
 # Windows checks
 
-Security baseline checks for Microsoft Windows, IDs `4001–4026`. Inventory collectors `4027–4036`
+Security baseline checks for Microsoft Windows, IDs `4001–4026` and `4037–4054`. Inventory collectors `4027–4036`
 are served by the Go binary (`checklist <id>`), not by scripts here.
 
 Each PowerShell script runs on the target host with no arguments, prints exactly one
@@ -29,7 +29,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
 
 <!-- BEGIN GENERATED: checklist docs -->
 
-### Controls (26)
+### Controls (44)
 
 | ID | Control | Key |
 |---:|---|---|
@@ -59,6 +59,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
 | [4024](4024.ps1) | Ensure 'Sensitive Privilege Use' auditing includes Success | `windows.audit.sensitive_privilege_use` |
 | [4025](4025.ps1) | Ensure antivirus real-time protection is enabled | `windows.defender.realtime_protection` |
 | [4026](4026.ps1) | Ensure a Windows Server Backup policy is configured | `windows.backup.policy` |
+| [4037](4037.ps1) | Ensure the SMBv1 server protocol is disabled | `windows.network.smb1_disabled` |
+| [4038](4038.ps1) | Ensure the SMB server requires message signing | `windows.network.smb_signing_required` |
+| [4039](4039.ps1) | Ensure Remote Desktop requires Network Level Authentication | `windows.remote.rdp_nla_required` |
+| [4040](4040.ps1) | Ensure Windows Firewall is enabled for all profiles | `windows.firewall.all_profiles_enabled` |
+| [4041](4041.ps1) | Ensure User Account Control is enabled | `windows.uac.enabled` |
+| [4042](4042.ps1) | Ensure UAC prompts administrators for consent on the secure desktop | `windows.uac.admin_consent_prompt` |
+| [4043](4043.ps1) | Ensure LLMNR (multicast name resolution) is disabled | `windows.network.llmnr_disabled` |
+| [4044](4044.ps1) | Ensure WDigest does not store plaintext credentials | `windows.credentials.wdigest_disabled` |
+| [4045](4045.ps1) | Ensure LSA protection (RunAsPPL) is enabled | `windows.credentials.lsa_protection` |
+| [4046](4046.ps1) | Ensure anonymous enumeration of accounts and shares is restricted | `windows.network.anonymous_enumeration_restricted` |
+| [4047](4047.ps1) | Ensure LAN Manager authentication accepts NTLMv2 only | `windows.network.ntlmv2_only` |
+| [4048](4048.ps1) | Ensure AutoPlay is turned off for all drives | `windows.hardening.autorun_disabled` |
+| [4049](4049.ps1) | Ensure the Remote Registry service is disabled | `windows.services.remote_registry_disabled` |
+| [4050](4050.ps1) | Ensure PowerShell script block logging is enabled | `windows.logging.powershell_script_block` |
+| [4051](4051.ps1) | Ensure the Security event log is at least 196608 KB | `windows.logging.security_log_size` |
+| [4052](4052.ps1) | Ensure BitLocker protects the operating system drive | `windows.encryption.bitlocker_os_drive` |
+| [4053](4053.ps1) | Ensure the built-in Administrator account is renamed | `windows.accounts.administrator_renamed` |
+| [4054](4054.ps1) | Ensure the machine inactivity limit is 900 seconds or less | `windows.session.inactivity_limit` |
 
 ### Inventory collectors (10)
 

@@ -7,7 +7,7 @@
 [![CI](https://github.com/Khanh1916/secbaseline/actions/workflows/ci.yml/badge.svg)](https://github.com/Khanh1916/secbaseline/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Khanh1916/secbaseline?style=flat-square)](https://github.com/Khanh1916/secbaseline/releases/latest)
 [![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat-square&logo=go&logoColor=white)](checklist/go.mod)
-[![Controls](https://img.shields.io/badge/controls-131-blueviolet?style=flat-square)](controls.yaml)
+[![Controls](https://img.shields.io/badge/controls-149-blueviolet?style=flat-square)](controls.yaml)
 [![Platforms](https://img.shields.io/badge/platforms-12-007ACC?style=flat-square)](#coverage)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
@@ -25,7 +25,7 @@
 
 ## Features
 
-- **131 CIS-style controls on 12 platforms**: Ubuntu, Debian, RHEL, Rocky Linux, CentOS, SUSE,
+- **149 CIS-style controls on 12 platforms**: Ubuntu, Debian, RHEL, Rocky Linux, CentOS, SUSE,
   Oracle Linux, Windows, Cisco IOS XE / IOS XR / NX-OS and Juniper Junos.
 - **One self-contained binary**: `checklist` runs the checks in parallel, writes JSON and
   standalone HTML reports, and needs no Python, database or internet access.
@@ -53,7 +53,7 @@
 | CentOS | [`centos/`](centos) | 91 | `5001`–`5091` |
 | SUSE Linux Enterprise / openSUSE | [`suse/`](suse) | 91 | `200`–`290` |
 | Oracle Linux | [`oraclelinux/`](oraclelinux) | 91 | `100`–`190` |
-| Windows | [`windows/`](windows) | 26 | `4001`–`4026` |
+| Windows | [`windows/`](windows) | 44 | `4001`–`4026`, `4037`–`4054` |
 | Cisco IOS XE | [`iosxe/`](iosxe) | 14 | `7001`–`7015` |
 | Juniper Junos | [`junos/`](junos) | 14 | `8001`–`8015` |
 | Cisco IOS XR | [`iosxr/`](iosxr) | 14 | `9001`–`9015` |
@@ -61,6 +61,8 @@
 
 Linux controls cover mounts and filesystems, kernel hardening, SELinux, banners, time sync,
 unneeded services, network parameters, firewall, SSH, logging, auditd, PAM and password policy.
+Windows controls cover password and lockout policy, audit policy, SMB, RDP, firewall, UAC,
+credential protection (WDigest, LSA, NTLMv2), AutoPlay, PowerShell logging and BitLocker.
 Each directory's README lists its controls; [`controls.yaml`](controls.yaml) is the full catalog.
 
 ## Quick start

@@ -21,6 +21,8 @@ var sectionNames = map[string]string{
 	"mac": "Mandatory access control", "ssh": "SSH", "tcp_wrappers": "TCP Wrappers",
 	"auth": "Authentication", "network": "Network", "audit": "Auditing", "rights": "User rights",
 	"defender": "Antivirus", "accounts": "Accounts", "lockout": "Account lockout",
+	"uac": "User Account Control", "credentials": "Credential protection", "remote": "Remote access",
+	"session": "Session", "encryption": "Encryption",
 }
 
 var page = template.Must(template.New("report").Funcs(template.FuncMap{

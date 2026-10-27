@@ -41,7 +41,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -49,7 +49,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -106,7 +106,12 @@ check_v2c_communities() {
             }
         }
     }')
-    
+
+    # ...and every community defined for polling ("snmp-server community <name> ..."),
+    # which answers queries whether or not a trap host uses it
+    v2c_communities=$(printf '%s\n%s\n' "$v2c_communities" \
+        "$(grep -i "^snmp-server[[:space:]]\+community[[:space:]]\+" "$CONFIG_FILE" | awk '{print $3}')" | sed '/^$/d' | sort -u)
+
     if [ -z "$v2c_communities" ]; then
         echo "NO_V2C"
         return

@@ -41,7 +41,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -49,7 +49,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -71,13 +71,11 @@ get_vty_access_class() {
     }
     
     # Find access-class in current section
-    in_section && /^[[:space:]]+access-class[[:space:]]+[^[:space:]]+[[:space:]]+in/ {
-        match($0, /access-class[[:space:]]+([^[:space:]]+)[[:space:]]+in/, arr)
-        if (arr[1]) {
-            print arr[1]
-            found_access_class = 1
-            exit 0
-        }
+    # Fields, not three-argument match(): mawk (Debian, Ubuntu) has no such match()
+    in_section && $1 == "access-class" && $3 == "in" {
+        print $2
+        found_access_class = 1
+        exit 0
     }
     
     END {

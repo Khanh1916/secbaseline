@@ -8,8 +8,8 @@ Each PowerShell script runs on the target host with no arguments, prints exactly
 
 ## Usage
 
-Run from an **elevated** PowerShell prompt: `secedit`, `auditpol` and parts of `net accounts` need
-Administrator rights, and without them the affected checks report `FAIL`.
+Run from an **elevated** PowerShell prompt: `secedit` and `auditpol` need Administrator rights, and
+without them the affected checks report `FAIL` with the reason.
 
 ```powershell
 .\checklist\checklist.exe run --html windows-report.html -o windows-report.json
@@ -23,8 +23,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
 
 ## Notes
 
-- Password and lockout checks parse `net accounts`, whose labels are localized. They expect an English-language Windows.
-- `4007.ps1` exports the local security policy with `secedit` to a temporary file and deletes it afterwards.
+- The checks work in any display language. Password and lockout checks (`4001`–`4006`) read the
+  local security policy exported by `secedit`; without elevation, `4001`, `4003`, `4005` and `4006`
+  fall back to `net accounts`, read by field position rather than by its localized labels.
+- Audit checks (`4010`–`4024`) read `auditpol /backup`, which identifies subcategories by GUID and
+  settings by number. A subcategory set to Success and Failure includes Success.
+- Checks that use `secedit` or `auditpol` export the policy to a temporary file and delete it
+  afterwards.
 - `4026.ps1` uses `Get-WBPolicy`, which exists only where Windows Server Backup is installed.
 
 <!-- BEGIN GENERATED: checklist docs -->

@@ -52,24 +52,9 @@ fi
 
 config_file="$1"
 
-# Function to display usage
-show_usage() {
-    echo "Usage: $0 <config_file>"
-    echo ""
-    echo "Parameters:"
-    echo "  config_file  - Cisco IOS-XE configuration file (required)"
-    echo ""
-    echo "Configured SIEM servers:"
-    for server in "${SIEM_SERVERS[@]}"; do
-        echo "  - $server"
-    done
-}
-
 # Check input parameter and file existence
 if [[ -z "$config_file" ]]; then
     echo "FAIL"
-    exit 1
-    show_usage >&2
     exit 1
 fi
 
@@ -89,16 +74,16 @@ check_siem_logging() {
     local siem_port="$2"
     
     # Check for logging host configuration for this SIEM IP
-    if ! grep -Ei "^\s*logging host\s+$siem_ip(\s|$)" "$config_file" >/dev/null; then
+    if ! grep -Ei "^[[:space:]]*logging host[[:space:]]+$siem_ip([[:space:]]|$)" "$config_file" >/dev/null; then
         return 1
     fi
     
     # Check port configuration
-    local port_line=$(grep -Ei "^\s*logging host\s+$siem_ip.*port\s+[0-9]+" "$config_file")
+    local port_line=$(grep -Ei "^[[:space:]]*logging host[[:space:]]+$siem_ip.*port[[:space:]]+[0-9]+" "$config_file")
     
     if [[ -n "$port_line" ]]; then
         # Port is explicitly configured - extract the configured port
-        local configured_port=$(echo "$port_line" | sed -E 's/.*port\s+([0-9]+).*/\1/i')
+        local configured_port=$(echo "$port_line" | sed -E 's/.*port[[:space:]]+([0-9]+).*/\1/i')
         
         # The configured port must match the expected port
         if [[ "$configured_port" == "$siem_port" ]]; then

@@ -80,20 +80,20 @@ config_file="$1"
 
 # Check input parameter and file existence
 if [ ! -f "$config_file" ]; then
-  echo "Usage: $0 <config-file>"
+  echo "FAIL"
   exit 1
 fi
 
 # Parse archive block and validate required components
 awk '
 BEGIN { in_archive=0; has_path=0; has_wm=0; has_tp=0; }
-/^archive\s*$/ { in_archive=1; next }
+/^archive[ \t]*$/ { in_archive=1; next }
 /^[^ ]/ { in_archive=0 }  # Exit block when encountering non-indented line
 {
   if (in_archive) {
-    if ($0 ~ /^\s*path\s+/) has_path=1;
-    if ($0 ~ /^\s*write-memory\s*$/) has_wm=1;
-    if ($0 ~ /^\s*time-period\s+/) has_tp=1;
+    if ($0 ~ /^[ \t]*path[ \t]+/) has_path=1;
+    if ($0 ~ /^[ \t]*write-memory[ \t]*$/) has_wm=1;
+    if ($0 ~ /^[ \t]*time-period[ \t]+/) has_tp=1;
   }
 }
 END {

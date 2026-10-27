@@ -19,18 +19,22 @@
 # SNMP Security Validation Rules:
 # 
 # 1. Community String with ACL:
-#    - Must have: "snmp-server community <string> RO <acl_name>"
+#    - EVERY "snmp-server community" line must be "<string> RO <acl>"
+#      (named or numbered ACL); an RW community or one without ACL fails
+#    - SNMPv3 groups must use "priv" (authentication and encryption)
+#    - No community and no group: SNMP is not running, which passes
 #    - RO (Read-Only) access prevents unauthorized configuration changes
 #    - ACL restricts which hosts can access SNMP services
 #
 # 2. Access Control List Definition:
-#    - Referenced ACL must be defined: "ip access-list <type> <acl_name>"
+#    - Referenced ACL must be defined: "ip access-list <type> <acl_name>" or
+#      "access-list <number> ..."
 #    - Prevents configuration errors with undefined ACLs
 #    - Ensures access restrictions are properly implemented
 #
 # 3. SNMP Host Configuration:
 #    - Must have: "snmp-server host <address> <community_string>"
-#    - Community string must match the one defined in step 1
+#    - When communities exist, a host must use one of them
 #    - Ensures consistent authentication across SNMP configuration
 #
 # Security Benefits:
@@ -72,27 +76,44 @@ if [ ! -f "$config_file" ]; then
   exit 1
 fi
 
-# Extract ACL_NAME and community string from: snmp-server community ... RO ACL_NAME
-acl_name=$(grep -E '^snmp-server community [^ ]+ RO [^ ]+' "$config_file" | awk '{print $5}' | head -n1)
-community=$(grep -E '^snmp-server community [^ ]+ RO [^ ]+' "$config_file" | awk '{print $3}' | head -n1)
+if awk '
+  { sub(/[ \t\r]+$/, "") }
+  /^ip access-list (standard|extended) / { defined[$4] = 1 }
+  /^access-list [0-9]+ / { defined[$2] = 1 }
 
-# If either ACL name or community string is missing -> FAIL
-if [ -z "$acl_name" ] || [ -z "$community" ]; then
-  echo "FAIL"
-  exit 1
+  # snmp-server community <string> [view <v>] RO|RW [<acl>]
+  /^snmp-server community / {
+    communities++
+    access = ""; acl = ""
+    for (i = 4; i <= NF; i++) {
+      if ($i == "view") { i++; continue }
+      if ($i == "RO" || $i == "RW") { access = $i; acl = $(i + 1); break }
+    }
+    if (access != "RO" || acl == "") bad = 1
+    else used[acl] = 1
+    name[$3] = 1
+  }
+
+  /^snmp-server group [^ ]+ v3 / { if ($5 != "priv") bad = 1 }
+  /^snmp-server group [^ ]+ v(1|2c) / { bad = 1 }
+
+  /^snmp-server host / {
+    for (i = 3; i <= NF; i++) host_word[$i] = 1
+  }
+
+  END {
+    if (bad) exit 1
+    for (a in used) if (!(a in defined)) exit 1
+    if (communities) {
+      for (c in name) if (c in host_word) exit 0
+      exit 1
+    }
+    exit 0
+  }
+' "$config_file"; then
+  echo "PASS"
+  exit 0
 fi
 
-# Check that the referenced access-list exists
-if ! grep -qE "^ip access-list [^ ]+ $acl_name" "$config_file"; then
-  echo "FAIL"
-  exit 1
-fi
-
-# Check that snmp-server host uses the same community string
-if ! grep -qE "snmp-server host .* $community(\s|$)" "$config_file"; then
-  echo "FAIL"
-  exit 1
-fi
-
-echo "PASS"
-exit 0
+echo "FAIL"
+exit 1

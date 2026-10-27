@@ -25,7 +25,9 @@
 #    - Essential for secure remote management
 #
 # 2. VTY Transport Input Restriction:
-#    - All "line vty" blocks must have: "transport input ssh"
+#    - All "line vty" blocks must have: "transport input ssh" (SSH only;
+#      "ssh telnet" or "all" fail), or "transport input none" for VTY lines
+#      that accept no remote access at all
 #    - Blocks insecure protocols (telnet, rlogin, etc.)
 #    - Enforces SSH-only access for all virtual terminal lines
 #    - Prevents plaintext credential transmission
@@ -77,31 +79,29 @@ if [ ! -f "$config_file" ]; then
 fi
 
 # 1. Check for SSH version 2 configuration (allows leading whitespace)
-if ! grep -iq '^\s*ip ssh version 2' "$config_file"; then
+if ! grep -iq '^[[:space:]]*ip ssh version 2' "$config_file"; then
   has_error=1
 fi
 
-# 2. Check that all line vty blocks have "transport input ssh" (allows whitespace)
+# 2. Check that all line vty blocks allow SSH only. POSIX classes, not \s and
+#    \S: mawk (Debian, Ubuntu) reads those as the letters s and S.
 awk '
-  BEGIN { block=""; in_vty=0; failed=0 }
-
-  /^\s*line vty/ {
-    if (in_vty && block !~ /\n\s*transport input ssh(\s|$)/) failed=1;
-    block=$0; in_vty=1; next;
+  function close_block() {
+    if (in_vty && transport != "ssh" && transport != "none") failed = 1
+    in_vty = 0
   }
 
-  /^\S/ {
-    if (in_vty && block !~ /\n\s*transport input ssh(\s|$)/) failed=1;
-    block=""; in_vty=0;
-  }
-
-  {
-    if (in_vty) block = block "\n" $0;
+  { sub(/[ \t\r]+$/, "") }
+  /^line vty/ { close_block(); in_vty = 1; transport = ""; next }
+  /^[^ ]/ { close_block() }
+  in_vty && $1 == "transport" && $2 == "input" {
+    transport = $3
+    for (i = 4; i <= NF; i++) transport = transport " " $i
   }
 
   END {
-    if (in_vty && block !~ /\n\s*transport input ssh(\s|$)/) failed=1;
-    exit failed;
+    close_block()
+    exit failed
   }
 ' "$config_file" || has_error=1
 

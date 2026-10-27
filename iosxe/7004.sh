@@ -26,7 +26,8 @@
 # 2. ACL Definition Validation:
 #    - Every referenced ACL name must be defined in configuration
 #    - Supports both standard and extended access lists
-#    - Format: "ip access-list [standard|extended] <acl_name>"
+#    - Format: "ip access-list [standard|extended] <acl_name>" or numbered
+#      "access-list <number> ..."
 #
 # 3. Security Compliance:
 #    - Follows principle of least privilege for remote access
@@ -62,69 +63,45 @@
 
 # Check input parameter and file existence
 if [ -z "$1" ] || [ ! -f "$1" ]; then
-  echo "Usage: $0 <config-file>"
-  exit 1
-fi
-
-cfg="$1"
-
-# Extract all ACL names used in line vty blocks
-acl_names=$(awk '
-  BEGIN { block = ""; in_vty = 0 }
-  /^line vty/ { in_vty = 1; block = $0; next }
-  /^line /     { in_vty = 0 }
-  {
-    if (in_vty) block = block "\n" $0;
-  }
-  END {
-    n = split(blocks, lines, "\n")
-  }
-  /^line vty/ {
-    if (block) {
-      match(block, /access-class[ \t]+([A-Za-z0-9_-]+)[ \t]+in/, m);
-      if (m[1]) print m[1];
-    }
-    block = $0;
-    next;
-  }
-  /^[^ ]/ {
-    if (block) {
-      match(block, /access-class[ \t]+([A-Za-z0-9_-]+)[ \t]+in/, m);
-      if (m[1]) print m[1];
-    }
-    block = "";
-  }
-  {
-    if (block) block = block "\n" $0;
-  }
-  END {
-    if (block ~ /^line vty/ && block ~ /access-class[ \t]+([A-Za-z0-9_-]+)[ \t]+in/) {
-      match(block, /access-class[ \t]+([A-Za-z0-9_-]+)[ \t]+in/, m);
-      if (m[1]) print m[1];
-    }
-  }
-' "$cfg" | sort -u)
-
-# If no access-class found then FAIL
-if [ -z "$acl_names" ]; then
   echo "FAIL"
   exit 1
 fi
 
-# Check if each ACL name exists in ip access-list definitions
-missing=0
-while read -r acl; do
-  if ! grep -qE "^ip access-list (standard|extended)?[ \t]+$acl(\s|$)" "$cfg"; then
-    missing=1
-    break
-  fi
-done <<< "$acl_names"
+# Plain POSIX awk: mawk, the default awk on Debian and Ubuntu, has no
+# three-argument match()
+if awk '
+  # A vty block without access-class leaves remote access open.
+  function close_block() {
+    if (!in_vty) return
+    if (acl == "") bad = 1
+    else used[acl] = 1
+    in_vty = 0
+  }
 
-# Final result evaluation
-if [ "$missing" -eq 0 ]; then
+  { sub(/[ \t\r]+$/, "") }
+  /^ip access-list (standard|extended) / { defined[$4] = 1 }
+  /^access-list [0-9]+ / { defined[$2] = 1 }
+
+  /^line vty/ {
+    close_block()
+    in_vty = 1
+    blocks++
+    acl = ""
+    next
+  }
+  /^[^ ]/ { close_block() }
+  in_vty && /^ +access-class [^ ]+ in( vrf-also)?$/ { acl = $2 }
+
+  END {
+    close_block()
+    if (!blocks || bad) exit 1
+    for (a in used) if (!(a in defined)) exit 1
+    exit 0
+  }
+' "$1"; then
   echo "PASS"
   exit 0
-else
-  echo "FAIL"
-  exit 1
 fi
+
+echo "FAIL"
+exit 1

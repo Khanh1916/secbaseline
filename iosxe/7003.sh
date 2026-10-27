@@ -23,7 +23,9 @@
 #    - line vty (virtual terminal)  : Telnet/SSH remote access
 #
 # 2. Required Configuration:
-#    - exec-timeout 5 0 : Session timeout of 5 minutes, 0 seconds
+#    - exec-timeout <minutes> [<seconds>] of more than 0 and at most 5 minutes
+#      ("exec-timeout 5 0", "exec-timeout 3 0", "exec-timeout 4 30")
+#    - "exec-timeout 0 0" disables the timeout and fails
 #    - Must be present in ALL configured line con/vty blocks
 #
 # 3. Security Rationale:
@@ -34,7 +36,7 @@
 #
 # Validation Logic:
 # - Scans all line con and line vty configuration blocks
-# - Each block must contain "exec-timeout 5 0" command
+# - Each block must contain an exec-timeout of at most 5 minutes
 # - Missing timeout in any block results in FAIL
 # - At least one line con and one line vty block must exist -> otherwise FAIL
 #   (IOS XE always lists them; without them the timeout cannot be verified
@@ -57,48 +59,36 @@
 
 # Check input parameter and file existence
 if [ -z "$1" ] || [ ! -f "$1" ]; then
-  echo "Usage: $0 <config-file>"
+  echo "FAIL"
   exit 1
 fi
 
 config_file="$1"
 
 awk '
-  BEGIN {
-    block = ""; in_block = 0; block_header = ""; seen_con = 0; seen_vty = 0;
+  # timeout: seconds of the block exec-timeout; 0 when missing or disabled.
+  function close_block() {
+    if (in_block && !(timeout > 0 && timeout <= 300)) bad = 1
+    in_block = 0
   }
+
+  { sub(/[ \t\r]+$/, "") }
 
   /^line (con|vty)/ {
-    if (in_block && block !~ /exec-timeout 5 0/) {
-      exit 1;
-    }
-    if ($2 ~ /^con/) seen_con = 1; else seen_vty = 1;
-    in_block = 1;
-    block_header = $0;
-    block = $0;
-    next;
+    close_block()
+    if ($2 ~ /^con/) seen_con = 1; else seen_vty = 1
+    in_block = 1
+    timeout = 0
+    next
   }
 
-  /^[^ ]/ {
-    if (in_block && block ~ /^line (con|vty)/ && block !~ /exec-timeout 5 0/) {
-      exit 1;
-    }
-    in_block = 0;
-    block = "";
-    block_header = "";
-  }
+  /^[^ ]/ { close_block() }
 
-  {
-    if (in_block) block = block "\n" $0;
-  }
+  in_block && /^ +exec-timeout [0-9]+( [0-9]+)?$/ { timeout = $2 * 60 + $3 }
 
   END {
-    if (in_block && block ~ /^line (con|vty)/ && block !~ /exec-timeout 5 0/) {
-      exit 1;
-    }
-    if (!seen_con || !seen_vty) {
-      exit 1;
-    }
+    close_block()
+    exit ((bad || !seen_con || !seen_vty) ? 1 : 0)
   }
 ' "$config_file"
 

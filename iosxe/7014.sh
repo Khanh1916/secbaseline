@@ -19,7 +19,8 @@
 # AAA Login Attempt Limitation Validation Rules:
 # 
 # 1. Authentication Attempts Configuration:
-#    - Must have: "aaa authentication attempts login <number>"
+#    - Must have: "aaa authentication attempts login <number>", or login
+#      quiet mode "login block-for <seconds> attempts <tries> within <seconds>"
 #    - Limits consecutive failed login attempts
 #    - Essential protection against brute force attacks
 #
@@ -77,7 +78,7 @@ if [ ! -f "$config_file" ]; then
 fi
 
 # Check for AAA authentication attempts login configuration
-if grep -Eq "^\s*aaa authentication attempts login\s+" "$config_file"; then
+if grep -Eq "^[[:space:]]*(aaa authentication attempts login|login block-for [0-9]+ attempts)[[:space:]]+[0-9]" "$config_file"; then
   echo "PASS"
   exit 0
 else

@@ -53,7 +53,7 @@ sudo ./checklist/checklist run --only linux.ssh,linux.auth --no-collectors
 | `--sarif` / `--junit` / `--csv` | | Also write SARIF 2.1.0, JUnit XML or CSV (see [Export formats](#export-formats)). |
 | `--only` | all | Comma-separated key prefixes, e.g. `linux.ssh,collect.listening_ports`. |
 | `-j, --jobs` | `4` | Checks run in parallel. |
-| `--timeout` | `2m` | Per-check timeout; a check that runs longer is reported as `error`. |
+| `--timeout` | `2m` | Timeout for each check and each collector; one that runs longer is reported as `error`. The run does not wait for a collector past it. |
 | `--no-collectors` | false | Skip inventory collectors. |
 | `-F, --files` / `-f, --folders` | | Inputs for the checksum and file-listing collectors; without them those collectors are `skipped`. |
 | `--shell` | `bash` | Interpreter for `.sh` scripts (useful on Windows: point it at Git Bash). |
@@ -191,10 +191,11 @@ be diffed against a baseline. Each collector has one ID per platform (see `colle
 | File checksums | SHA-256 of `--files` | same |
 | File listing | files in `--folders` | same |
 | Listening ports | non-loopback listeners | same |
-| Firewall rules | `sudo iptables`/`ip6tables` for every table | `netsh advfirewall firewall show rule name=all` |
+| Firewall rules | `iptables`/`ip6tables` for every table | `netsh advfirewall firewall show rule name=all` |
 | Log config | rsyslog configuration and service status | SIEM and antivirus agent service status |
 
-The firewall collector calls `sudo`; run the binary as root so it does not wait for a password.
+The firewall collector runs `iptables` directly as root and through `sudo -n` otherwise, so it never
+waits for a password; without root or passwordless sudo it collects no rules.
 
 ## Package layout
 

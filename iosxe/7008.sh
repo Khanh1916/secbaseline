@@ -3,8 +3,8 @@
 # Cisco IOS-XE Configuration AAA Remote Authentication Validation Script
 # Commercial Software Compatible - Version 1.0
 # 
-# Purpose: Validate AAA remote authentication configuration for VTY access
-# Ensures proper RADIUS/TACACS+ authentication setup and VTY line compliance
+# Purpose: Validate AAA remote authentication configuration for console and VTY access
+# Ensures proper RADIUS/TACACS+ authentication setup and console/VTY line compliance
 # Input: Configuration file path as argument
 # Output: PASS or FAIL
 # 
@@ -35,6 +35,12 @@
 #    - No line vty block -> FAIL
 #    - Ensures consistent remote authentication across all VTY sessions
 #
+# 4. Console Validation (as on IOS XR and NX-OS):
+#    - line con 0 must use a central list too: its own "login authentication
+#      <list>", otherwise the "default" list
+#    - A list such as "group TACGRP local" still lets the local database in
+#      when the servers do not answer, so the console stays usable
+#
 # Security Compliance:
 # - Enforces centralized authentication via RADIUS/TACACS+
 # - Prevents local authentication bypass on remote access
@@ -45,6 +51,7 @@
 # - AAA method defined but VTY lines not configured
 # - Method name mismatch between AAA definition and VTY usage
 # - Missing "login authentication" on some VTY lines
+# - Console using a local-only list, or the default list when it is not central
 # - RADIUS/TACACS+ method not properly defined
 #
 # Return Codes:
@@ -73,7 +80,7 @@ if ! grep -qE '^aaa new-model([[:space:]]|$)' "$config_file"; then
 fi
 
 # Read the file twice: server groups and method lists may appear in any order,
-# then every line vty block must use a central method list
+# then the console and every line vty block must use a central method list
 if awk '
   NR == FNR {
     if ($0 ~ /^aaa group server (radius|tacacs\+) /) groups[$5] = 1
@@ -93,8 +100,15 @@ if awk '
     in_block = 0
   }
 
+  /^line con / {
+    close_block()
+    in_console = 1
+    next
+  }
+
   /^line vty/ {
     close_block()
+    in_console = 0
     in_block = 1
     blocks++
     list = ""
@@ -103,6 +117,11 @@ if awk '
 
   /^[^ ]/ {
     close_block()
+    in_console = 0
+  }
+
+  in_console && /^ +login authentication / {
+    console_list = $3
   }
 
   in_block && /^ +login authentication / {
@@ -111,6 +130,7 @@ if awk '
 
   END {
     close_block()
+    if (!central(console_list == "" ? "default" : console_list)) bad++
     exit (blocks == 0 || bad > 0) ? 1 : 0
   }
 ' "$config_file" "$config_file"; then

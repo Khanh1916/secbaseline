@@ -149,6 +149,7 @@ type SubjectSummary struct {
 	LastSeen    time.Time      `json:"last_seen"`
 	Reports     int            `json:"reports"`
 	HasPrevious bool           `json:"has_previous"`
+	HasDelta    bool           `json:"has_delta"` // the latest and previous reports both have a score
 	Delta       float64        `json:"delta"`
 	Regressions int            `json:"regressions"`
 	Drift       bool           `json:"drift"`
@@ -174,17 +175,22 @@ func (s *Server) summaries() ([]SubjectSummary, error) {
 		if len(files) > 1 {
 			if prev, err := s.store.Load(id, files[len(files)-2]); err == nil {
 				d := drift.Compare(prev, latest)
-				sum.HasPrevious, sum.Delta, sum.Regressions, sum.Drift = true, d.ScoreDelta, len(d.Regressions), d.HasDrift()
+				sum.HasPrevious, sum.HasDelta, sum.Delta, sum.Regressions, sum.Drift = true, d.HasDelta(), d.ScoreDelta, len(d.Regressions), d.HasDrift()
 			}
 		}
 		out = append(out, sum)
 	}
-	// Worst first: regressions, then lowest score.
+	// Worst first: regressions, then lowest score; reports without a score last.
 	slices.SortStableFunc(out, func(a, b SubjectSummary) int {
 		if a.Regressions != b.Regressions {
 			return b.Regressions - a.Regressions
 		}
 		switch {
+		case a.Latest.HasScore() != b.Latest.HasScore():
+			if a.Latest.HasScore() {
+				return -1
+			}
+			return 1
 		case a.Latest.Score < b.Latest.Score:
 			return -1
 		case a.Latest.Score > b.Latest.Score:
@@ -271,22 +277,26 @@ func (s *Server) render(w http.ResponseWriter, name string, data any) {
 	}
 }
 
-// trend returns SVG polyline points for the score history (oldest left).
+// trend returns SVG polyline points for the score history (oldest left),
+// skipping reports without a score, or "" when fewer than two have one.
 func trend(rows []historyRow) string {
 	// Plot area: x from left to width-pad (labels sit left of it), y from pad to height-pad.
 	const width, height, pad, left = 600.0, 120.0, 10.0, 44.0
-	if len(rows) == 0 {
-		return ""
-	}
 	var pts []string
 	step := 0.0
 	if len(rows) > 1 {
 		step = (width - pad - left) / float64(len(rows)-1)
 	}
 	for i, r := range rows {
+		if !r.Summary.HasScore() {
+			continue
+		}
 		x := left + step*float64(i)
 		y := height - pad - r.Summary.Score/100*(height-2*pad)
 		pts = append(pts, fmt.Sprintf("%.1f,%.1f", x, y))
+	}
+	if len(pts) < 2 {
+		return ""
 	}
 	return strings.Join(pts, " ")
 }

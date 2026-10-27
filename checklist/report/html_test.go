@@ -32,3 +32,21 @@ func TestWriteHTML(t *testing.T) {
 		}
 	}
 }
+
+func TestWriteHTMLWithoutScore(t *testing.T) {
+	rep := &runner.Report{
+		SchemaVersion: runner.SchemaVersion,
+		Platform:      runner.PlatformInfo{Key: "ubuntu", Name: "Ubuntu", Kind: "linux"},
+		Host:          runner.Host{Hostname: "web01"},
+		StartedAt:     time.Unix(0, 0),
+		Collectors:    []runner.CollectorResult{{Key: "collect.listening_ports", Title: "Ports", Status: runner.StatusOK, Output: "0.0.0.0:22/TCP"}},
+	}
+	var b strings.Builder
+	if err := WriteHTML(&b, rep); err != nil {
+		t.Fatal(err)
+	}
+	html := b.String()
+	if !strings.Contains(html, "<strong>n/a</strong>") || strings.Contains(html, "0%</strong>") || strings.Contains(html, "conic-gradient") {
+		t.Errorf("report without checks shows a score:\n%s", html)
+	}
+}

@@ -99,8 +99,13 @@ type Summary struct {
 	// Waived counts failing checks covered by a waiver; like errors they are excluded from the score.
 	Waived int `json:"waived"`
 	// Score is pass / (pass + fail) as a percentage; errors and waived checks are excluded.
+	// It is 0 when no check passed or failed; see HasScore.
 	Score float64 `json:"score"`
 }
+
+// HasScore reports whether any check passed or failed. A report with only
+// collectors, errors or waived checks has no score, rather than a score of 0.
+func (s Summary) HasScore() bool { return s.Pass+s.Fail > 0 }
 
 type CheckResult struct {
 	Key        string   `json:"key"`

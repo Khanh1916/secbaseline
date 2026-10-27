@@ -125,3 +125,62 @@ func TestRefusesPublicListenWithoutToken(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestReportWithoutScore(t *testing.T) {
+	ts := newTest(t, "")
+	ctx := context.Background()
+	day := time.Date(2026, 10, 17, 8, 0, 0, 0, time.UTC)
+	inventory := func(host string, at time.Time) []byte {
+		b, err := json.Marshal(runner.Report{
+			SchemaVersion: runner.SchemaVersion,
+			Platform:      runner.PlatformInfo{Key: "ubuntu", Name: "Ubuntu", Kind: "linux"},
+			Host:          runner.Host{Hostname: host},
+			StartedAt:     at,
+			Collectors:    []runner.CollectorResult{{Key: "collect.listening_ports", Title: "Ports", Status: "ok", Output: "0.0.0.0:22/TCP"}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	// web01 scores 100 then sends an inventory-only report; inv01 only ever sends inventory;
+	// web02 fails its check, so it scores 0.
+	for _, body := range [][]byte{
+		sample(t, day, "pass", "0.0.0.0:22/TCP"), inventory("web01", day.Add(time.Hour)), inventory("inv01", day),
+		[]byte(strings.Replace(string(sample(t, day, "fail", "")), `"web01"`, `"web02"`, 1)),
+	} {
+		if _, err := Upload(ctx, ts.URL, "", body); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	resp, err := http.Get(ts.URL + "/api/subjects")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var subs []SubjectSummary
+	if err := json.NewDecoder(resp.Body).Decode(&subs); err != nil {
+		t.Fatal(err)
+	}
+	var order []string
+	for _, s := range subs {
+		order = append(order, s.ID)
+	}
+	// A host without a score is not ranked as the worst one.
+	if strings.Join(order, " ") != "ubuntu_web02 ubuntu_inv01 ubuntu_web01" {
+		t.Errorf("order = %v", order)
+	}
+	if web01 := subs[2]; !web01.HasPrevious || web01.HasDelta || web01.Delta != 0 {
+		t.Errorf("web01 = %+v", web01)
+	}
+
+	_, body := get(t, ts.URL+"/", "", "")
+	if strings.Count(body, `<span class="muted">n/a</span>`) != 3 || strings.Contains(body, "-100.0") {
+		t.Errorf("overview should show n/a for two scores and one change:\n%s", body)
+	}
+	_, body = get(t, ts.URL+"/s/ubuntu_web01", "", "")
+	if strings.Contains(body, "points)") || strings.Contains(body, "<polyline") || !strings.Contains(body, "100.0%") {
+		t.Errorf("subject page:\n%s", body)
+	}
+}

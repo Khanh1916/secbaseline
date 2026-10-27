@@ -124,7 +124,9 @@ unused waivers (their checks pass). `checklist lint` validates every file in `po
 - Check `status`: `pass`, `fail`, `waived` (with a `waiver` object) or `error` (errors keep raw
   `output` and `stderr`). Collector
   `status`: `ok`, `error` or `skipped`.
-- `score` is `pass / (pass + fail)` as a percentage; errors and waived checks are excluded.
+- `score` is `pass / (pass + fail)` as a percentage; errors and waived checks are excluded. When
+  no check passed or failed (`pass + fail` is 0, e.g. a collector-only run) the report has no
+  score: `score` is 0, and the run summary, HTML report and dashboard show `n/a` instead of 0%.
 - Network reports add `target`: the configuration path, its SHA-256 and the device hostname.
 
 ## Export formats

@@ -12,7 +12,7 @@ func rep(score float64, checks []runner.CheckResult, inv ...runner.CollectorResu
 	return &runner.Report{
 		Platform:   runner.PlatformInfo{Key: "ubuntu"},
 		Host:       runner.Host{Hostname: "web01"},
-		Summary:    runner.Summary{Score: score},
+		Summary:    runner.Summary{Pass: 1, Score: score}, // a passing check gives the report a score
 		Checks:     checks,
 		Collectors: inv,
 	}
@@ -63,5 +63,20 @@ func TestNoDrift(t *testing.T) {
 	a := rep(100, []runner.CheckResult{{Key: "a", Status: "pass"}})
 	if r := Compare(a, a); r.HasDrift() || len(r.Fixed) != 0 {
 		t.Fatalf("unexpected drift: %+v", r)
+	}
+}
+
+func TestCompareWithoutScore(t *testing.T) {
+	scored := rep(80, []runner.CheckResult{{Key: "a", Status: "pass"}})
+	inventory := &runner.Report{Platform: runner.PlatformInfo{Key: "ubuntu"}, Host: runner.Host{Hostname: "web01"},
+		Collectors: []runner.CollectorResult{{Key: "collect.listening_ports", Status: "ok", Output: "0.0.0.0:22/TCP"}}}
+	r := Compare(scored, inventory)
+	if r.HasDelta() || r.ScoreDelta != 0 || r.New.HasScore || !r.Old.HasScore {
+		t.Errorf("delta = %v, has delta = %v, old %+v, new %+v", r.ScoreDelta, r.HasDelta(), r.Old, r.New)
+	}
+	var b strings.Builder
+	WriteText(&b, r)
+	if !strings.Contains(b.String(), "Score: 80.0% -> n/a\n") {
+		t.Errorf("text:\n%s", b.String())
 	}
 }

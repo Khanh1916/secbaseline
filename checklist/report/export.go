@@ -119,7 +119,10 @@ func WriteSARIF(w io.Writer, rep *runner.Report) error {
 			"endTimeUtc":          rep.FinishedAt.UTC().Format(time.RFC3339),
 		}},
 		Results:    []sarifResult{},
-		Properties: map[string]any{"platform": rep.Platform.Key, "subject": subject, "score": rep.Summary.Score},
+		Properties: map[string]any{"platform": rep.Platform.Key, "subject": subject},
+	}
+	if rep.Summary.HasScore() {
+		run.Properties["score"] = rep.Summary.Score
 	}
 	for i, c := range rep.Checks {
 		path := scriptPath(rep, c.ID)

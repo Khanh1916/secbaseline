@@ -17,6 +17,7 @@ type Side struct {
 	Subject   string  `json:"subject"`
 	StartedAt string  `json:"started_at"`
 	Score     float64 `json:"score"`
+	HasScore  bool    `json:"has_score"` // false when no check passed or failed; Score is then 0
 }
 
 type CheckChange struct {
@@ -39,7 +40,7 @@ type InventoryChange struct {
 type Result struct {
 	Old         Side              `json:"old"`
 	New         Side              `json:"new"`
-	ScoreDelta  float64           `json:"score_delta"`
+	ScoreDelta  float64           `json:"score_delta"` // 0 unless both sides have a score
 	Regressions []CheckChange     `json:"regressions"`
 	Fixed       []CheckChange     `json:"fixed"`
 	Changed     []CheckChange     `json:"changed"` // transitions into or out of error, added, removed
@@ -51,18 +52,24 @@ func (r *Result) HasDrift() bool {
 	return len(r.Regressions)+len(r.Changed)+len(r.Inventory) > 0
 }
 
+// HasDelta reports whether both reports have a score, so ScoreDelta means something.
+func (r *Result) HasDelta() bool { return r.Old.HasScore && r.New.HasScore }
+
 // Subject is the device hostname for network reports and the host name otherwise.
 func Subject(rep *runner.Report) string { return rep.Subject() }
 
 func side(rep *runner.Report) Side {
-	return Side{Platform: rep.Platform.Key, Subject: Subject(rep), StartedAt: rep.StartedAt.Format("2006-01-02 15:04 MST"), Score: rep.Summary.Score}
+	return Side{Platform: rep.Platform.Key, Subject: Subject(rep), StartedAt: rep.StartedAt.Format("2006-01-02 15:04 MST"),
+		Score: rep.Summary.Score, HasScore: rep.Summary.HasScore()}
 }
 
 // Compare matches checks and collectors by key. The two reports may come from
 // different hosts, e.g. a golden baseline and a production server.
 func Compare(old, cur *runner.Report) *Result {
 	r := &Result{Old: side(old), New: side(cur)}
-	r.ScoreDelta = round1(cur.Summary.Score - old.Summary.Score)
+	if r.HasDelta() {
+		r.ScoreDelta = round1(cur.Summary.Score - old.Summary.Score)
+	}
 
 	before := map[string]runner.CheckResult{}
 	for _, c := range old.Checks {
@@ -152,7 +159,11 @@ func lines(s string) []string {
 // WriteText prints a human-readable summary of r.
 func WriteText(w io.Writer, r *Result) {
 	fmt.Fprintf(w, "%s %s (%s)  ->  %s %s (%s)\n", r.Old.Platform, r.Old.Subject, r.Old.StartedAt, r.New.Platform, r.New.Subject, r.New.StartedAt)
-	fmt.Fprintf(w, "Score: %.1f%% -> %.1f%% (%+.1f)\n", r.Old.Score, r.New.Score, r.ScoreDelta)
+	if r.HasDelta() {
+		fmt.Fprintf(w, "Score: %.1f%% -> %.1f%% (%+.1f)\n", r.Old.Score, r.New.Score, r.ScoreDelta)
+	} else {
+		fmt.Fprintf(w, "Score: %s -> %s\n", scoreText(r.Old), scoreText(r.New))
+	}
 	section := func(title string, cs []CheckChange) {
 		if len(cs) == 0 {
 			return
@@ -186,6 +197,13 @@ func WriteText(w io.Writer, r *Result) {
 	if len(r.Regressions)+len(r.Fixed)+len(r.Changed)+len(r.Inventory) == 0 {
 		fmt.Fprintln(w, "\nNo changes.")
 	}
+}
+
+func scoreText(s Side) string {
+	if !s.HasScore {
+		return "n/a"
+	}
+	return fmt.Sprintf("%.1f%%", s.Score)
 }
 
 func firstNonEmpty(s ...string) string {

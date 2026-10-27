@@ -229,7 +229,7 @@ Release archives and the container image carry GitHub build provenance attestati
 release includes an SPDX SBOM and `checksums.txt`:
 
 ```bash
-gh attestation verify secbaseline-0.3.0-linux-amd64.tar.gz --repo Khanh1916/secbaseline
+gh attestation verify secbaseline-0.4.0-linux-amd64.tar.gz --repo Khanh1916/secbaseline
 gh attestation verify oci://ghcr.io/khanh1916/secbaseline:latest --repo Khanh1916/secbaseline
 ```
 

@@ -1,0 +1,38 @@
+# Example policy. Copy it, rename it, and keep it under version control so every
+# exception has a history.
+#
+#   sudo ./checklist/checklist run --policy my-policy.yaml --html report.html
+#
+# A policy has two parts, both optional:
+#
+#   include / exclude  Which controls apply (a profile). Entries are control key
+#                      prefixes, e.g. "linux.ssh" or "linux.mac.selinux_enforcing".
+#                      Without include, every control applies; exclude removes some.
+#
+#   waivers            Accepted failures. A failing check covered by an active
+#                      waiver is reported as "waived" and left out of the score.
+#                      After the expiry date it counts as a failure again, and a
+#                      waiver whose check now passes is reported as unused.
+
+name: example
+description: Template showing a profile and two waivers
+
+include:
+  - linux
+exclude:
+  - linux.mac            # this fleet uses AppArmor
+
+waivers:
+  - key: linux.filesystem.tmp_partition
+    hosts: ["web-*"]     # glob on the host name (or device hostname for network audits)
+    platforms: [ubuntu]  # optional; omit to match every platform
+    reason: Cloud images have a single root filesystem; /tmp is a tmpfs mounted at boot
+    approved_by: Security team
+    expires: 2027-06-30  # required, inclusive
+    ticket: SEC-1234     # optional reference
+
+  - key: linux.ssh.ssh_x11_forwarding_disabled
+    hosts: ["build-01"]
+    reason: Graphical build tools need X11 forwarding until the migration to headless runners
+    approved_by: Platform lead
+    expires: 2027-03-31

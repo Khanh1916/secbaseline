@@ -44,6 +44,7 @@ type section struct {
 	Pass   int
 	Fail   int
 	Error  int
+	Waived int
 }
 
 type view struct {
@@ -78,6 +79,8 @@ func WriteHTML(w io.Writer, rep *runner.Report) error {
 			s.Fail++
 		case runner.StatusError:
 			s.Error++
+		case runner.StatusWaived:
+			s.Waived++
 		}
 	}
 	return page.Execute(w, v)

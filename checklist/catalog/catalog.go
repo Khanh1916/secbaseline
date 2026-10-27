@@ -128,6 +128,16 @@ func (c *Catalog) PlatformNames() []string {
 	return names
 }
 
+// HasKey reports whether a control key exists in the catalog.
+func (c *Catalog) HasKey(key string) bool {
+	for _, it := range c.Controls {
+		if it.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
 // ScriptPath is the absolute path of the script for a control on a platform.
 func (c *Catalog) ScriptPath(platform string, id int) string {
 	p := c.Platforms[platform]

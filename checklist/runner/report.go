@@ -31,6 +31,27 @@ type Report struct {
 	Summary       Summary           `json:"summary"`
 	Checks        []CheckResult     `json:"checks"`
 	Collectors    []CollectorResult `json:"collectors,omitempty"`
+	Policy        *PolicyInfo       `json:"policy,omitempty"`
+}
+
+// PolicyInfo records the policy a run used and the waivers that need attention.
+type PolicyInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// Excluded counts controls left out by the policy's include/exclude lists.
+	Excluded int `json:"excluded"`
+	// ExpiredWaivers no longer apply; their checks count as failures again.
+	ExpiredWaivers []WaiverNote `json:"expired_waivers,omitempty"`
+	// UnusedWaivers cover checks that now pass, so the exception can be removed.
+	UnusedWaivers []WaiverNote `json:"unused_waivers,omitempty"`
+}
+
+type WaiverNote struct {
+	Key     string `json:"key"`
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Reason  string `json:"reason"`
+	Expires string `json:"expires"`
 }
 
 // Subject is what the report is about: the device hostname for network audits,

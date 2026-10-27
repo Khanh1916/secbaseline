@@ -1,0 +1,11 @@
+# Ubuntu and Debian hosts protected by AppArmor instead of SELinux.
+#
+# Both distributions ship AppArmor as their mandatory access control system, so
+# the SELinux controls fail on every such host without describing a real gap.
+#
+#   sudo ./checklist/checklist run --policy policies/apparmor-hosts.yaml --html report.html
+
+name: apparmor-hosts
+description: Ubuntu/Debian hosts that use AppArmor; SELinux controls do not apply
+exclude:
+  - linux.mac

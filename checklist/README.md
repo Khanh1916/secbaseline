@@ -49,6 +49,7 @@ sudo ./checklist/checklist run --only linux.ssh,linux.auth --no-collectors
 | `-c, --config` | | Saved device configuration to audit. Network platforms only. |
 | `-o, --output` | `-` (stdout) | Where to write the JSON report. |
 | `--html` | | Also write an HTML report to this path. |
+| `--policy` | | Policy file: include/exclude controls and waive accepted failures (see [Policies](#policies)). |
 | `--sarif` / `--junit` / `--csv` | | Also write SARIF 2.1.0, JUnit XML or CSV (see [Export formats](#export-formats)). |
 | `--only` | all | Comma-separated key prefixes, e.g. `linux.ssh,collect.listening_ports`. |
 | `-j, --jobs` | `4` | Checks run in parallel. |
@@ -78,6 +79,25 @@ requires the exit code to agree:
 Scripts run with `LC_ALL=C` so the command output they parse is in English, with the platform
 directory as working directory. Output is capped at 1 MiB per stream.
 
+## Policies
+
+`--policy FILE` applies a YAML policy (examples in [`../policies`](../policies)):
+
+| Field | Meaning |
+|---|---|
+| `name`, `description` | Shown in reports. `name` is required. |
+| `include`, `exclude` | Control key prefixes. Without `include` every control applies; `exclude` removes some. Collectors are not affected. |
+| `waivers[].key` | Exact control key. Unknown keys are rejected. |
+| `waivers[].hosts` | Glob patterns on the host name, or the device hostname for network audits. Empty matches every host. |
+| `waivers[].platforms` | Platform keys. Empty matches every platform. |
+| `waivers[].reason`, `approved_by`, `ticket` | Recorded in every report. `reason` is required. |
+| `waivers[].expires` | `YYYY-MM-DD`, required, valid through that day (UTC). |
+
+A failing check covered by an active waiver becomes `waived`: excluded from the score, shown with
+its waiver in HTML, a suppressed result in SARIF, `skipped` in JUnit. The report's `policy` object
+records how many controls the profile excluded, expired waivers (their checks fail again) and
+unused waivers (their checks pass). `checklist lint` validates every file in `policies/`.
+
 ## Report format
 
 `checklist run` writes one JSON document (`schema_version` changes only on incompatible changes):
@@ -101,9 +121,10 @@ directory as working directory. Output is capped at 1 MiB per stream.
 }
 ```
 
-- Check `status`: `pass`, `fail` or `error` (errors keep raw `output` and `stderr`). Collector
+- Check `status`: `pass`, `fail`, `waived` (with a `waiver` object) or `error` (errors keep raw
+  `output` and `stderr`). Collector
   `status`: `ok`, `error` or `skipped`.
-- `score` is `pass / (pass + fail)` as a percentage; errors are excluded.
+- `score` is `pass / (pass + fail)` as a percentage; errors and waived checks are excluded.
 - Network reports add `target`: the configuration path, its SHA-256 and the device hostname.
 
 ## Export formats

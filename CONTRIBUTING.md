@@ -55,6 +55,12 @@ collectors:
 4. Run the check on a real or virtual host. Network checks can be run against the sample
    configuration in each network directory, and against an empty file (which must fail).
 
+## Policies
+
+Policy files in `policies/` are examples shipped with the project; `checklist lint` loads each one
+and rejects unknown control keys, missing reasons and invalid expiry dates. Keep real waivers for a
+fleet in that fleet's own repository.
+
 ## Output contract
 
 Host checks (`.sh`, `.ps1`) take no arguments:

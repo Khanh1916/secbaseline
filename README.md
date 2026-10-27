@@ -29,6 +29,8 @@
   Oracle Linux, Windows, Cisco IOS XE / IOS XR / NX-OS and Juniper Junos.
 - **One self-contained binary**: `checklist` runs the checks in parallel, writes JSON and
   standalone HTML reports, and needs no Python, database or internet access.
+- **Policies with expiring waivers**: choose which controls apply to a group of hosts and record
+  accepted exceptions with a reason, approver and expiry date.
 - **Fits into pipelines**: SARIF for code scanning, JUnit XML for CI test views and CSV for
   spreadsheets, from the same run.
 - **Offline network audits**: checks read a saved running configuration; no device credentials or
@@ -136,6 +138,30 @@ with a per-check timeout, runs the inventory collectors, and writes the report.
   or `1`. An empty configuration fails every check.
 - A verdict that disagrees with the exit code, a missing verdict or a timeout is an `error`.
 - The score is `pass / (pass + fail)`; errors are reported separately.
+
+## Policies: profiles and waivers
+
+A policy file chooses which controls apply and records accepted exceptions. A failing check
+covered by an active waiver is reported as `waived` (with its reason, approver and expiry) and left
+out of the score; once the waiver expires the check counts as a failure again.
+
+```yaml
+name: web-servers
+exclude: [linux.mac]            # these hosts use AppArmor, not SELinux
+waivers:
+  - key: linux.filesystem.tmp_partition
+    hosts: ["web-*"]
+    reason: Cloud images have a single root filesystem; /tmp is a tmpfs
+    approved_by: Security team
+    expires: 2027-06-30
+```
+
+```bash
+sudo ./checklist/checklist run --policy web-servers.yaml --html report.html
+```
+
+Reports list expired waivers and waivers whose check now passes, so exceptions do not outlive their
+reason. See [`policies/`](policies) for a documented template and a ready-made AppArmor profile.
 
 ## Fleet dashboard
 

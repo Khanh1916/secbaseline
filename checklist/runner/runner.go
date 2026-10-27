@@ -19,6 +19,7 @@ import (
 
 	"checklist/catalog"
 	"checklist/collector"
+	"checklist/policy"
 )
 
 const maxOutput = 1 << 20 // per stream, per script
@@ -33,6 +34,8 @@ type Options struct {
 	Collectors bool
 	Input      collector.Input
 	Version    string
+	Policy     *policy.Policy // optional profile and waivers
+	Now        func() time.Time
 }
 
 // Run executes every check (and, unless disabled, every collector) the catalog
@@ -77,6 +80,18 @@ func Run(ctx context.Context, cat *catalog.Catalog, opts Options) (*Report, erro
 	}
 
 	controls := selectItems(cat.ControlsFor(opts.Platform), opts.Only)
+	if opts.Policy != nil {
+		rep.Policy = &PolicyInfo{Name: opts.Policy.Name, Description: opts.Policy.Description}
+		kept := controls[:0:0]
+		for _, it := range controls {
+			if opts.Policy.Selects(it.Key) {
+				kept = append(kept, it)
+			} else {
+				rep.Policy.Excluded++
+			}
+		}
+		controls = kept
+	}
 	var collectors []catalog.Item
 	if opts.Collectors && p.Kind != catalog.KindNetwork {
 		collectors = selectItems(cat.CollectorsFor(opts.Platform), opts.Only)
@@ -102,6 +117,11 @@ func Run(ctx context.Context, cat *catalog.Catalog, opts Options) (*Report, erro
 		rep.Collectors = append(rep.Collectors, runCollector(it, opts))
 	}
 
+	now := time.Now
+	if opts.Now != nil {
+		now = opts.Now
+	}
+	applyWaivers(rep, opts.Policy, now())
 	rep.FinishedAt = time.Now().UTC()
 	rep.DurationMS = rep.FinishedAt.Sub(rep.StartedAt).Milliseconds()
 	rep.Summary = summarize(rep.Checks)
@@ -277,4 +297,30 @@ func (c *capped) String() string {
 		return c.buf.String() + "\n[output truncated]"
 	}
 	return c.buf.String()
+}
+
+// applyWaivers turns failing checks covered by an active waiver into StatusWaived
+// and records expired and no-longer-needed waivers in rep.Policy.
+func applyWaivers(rep *Report, pol *policy.Policy, now time.Time) {
+	if pol == nil || rep.Policy == nil {
+		return
+	}
+	subject := rep.Subject()
+	for i := range rep.Checks {
+		c := &rep.Checks[i]
+		w, ok := pol.Find(rep.Platform.Key, subject, c.Key)
+		if !ok {
+			continue
+		}
+		note := WaiverNote{Key: c.Key, ID: c.ID, Title: c.Title, Reason: w.Reason, Expires: w.Expires}
+		switch {
+		case w.Expired(now):
+			rep.Policy.ExpiredWaivers = append(rep.Policy.ExpiredWaivers, note)
+		case c.Status == StatusFail:
+			c.Status = StatusWaived
+			c.Waiver = &Waiver{Reason: w.Reason, ApprovedBy: w.ApprovedBy, Expires: w.Expires, Ticket: w.Ticket}
+		case c.Status == StatusPass:
+			rep.Policy.UnusedWaivers = append(rep.Policy.UnusedWaivers, note)
+		}
+	}
 }

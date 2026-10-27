@@ -52,6 +52,9 @@ td.status { width: 72px; } td.id { width: 72px; color: var(--muted); font-varian
 .pill.error { color: var(--error); background: var(--error-bg); }
 .pill.ok { color: var(--pass); background: var(--pass-bg); }
 .pill.skipped { color: var(--muted); background: var(--code); }
+.pill.waived { color: var(--accent); background: var(--code); }
+.tile.waived .n { color: var(--accent); }
+.waiver { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .ctitle { font-weight: 600; }
 .msg { color: var(--muted); }
 .key { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
@@ -59,8 +62,8 @@ details { margin-top: 6px; }
 summary { cursor: pointer; color: var(--accent); }
 pre { background: var(--code); border-radius: 6px; padding: 10px 12px; margin: 6px 0 0; overflow-x: auto; white-space: pre-wrap; word-break: break-word;
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-body.only-fail tr.check:not(.fail), body.only-error tr.check:not(.error), body.only-pass tr.check:not(.pass) { display: none; }
-body.only-fail section.card.checks:not(.has-fail), body.only-error section.card.checks:not(.has-error), body.only-pass section.card.checks:not(.has-pass) { display: none; }
+body.only-fail tr.check:not(.fail), body.only-error tr.check:not(.error), body.only-pass tr.check:not(.pass), body.only-waived tr.check:not(.waived) { display: none; }
+body.only-fail section.card.checks:not(.has-fail), body.only-error section.card.checks:not(.has-error), body.only-pass section.card.checks:not(.has-pass), body.only-waived section.card.checks:not(.has-waived) { display: none; }
 footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
 footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
 @media (max-width: 640px) { td.id { display: none; } td { padding: 10px 12px; } }
@@ -80,6 +83,7 @@ footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
   <div>OS <b>{{if .Host.Platform}}{{.Host.Platform}} {{.Host.PlatformVersion}}{{else}}{{.Host.OS}}{{end}}</b></div>{{end}}
   <div>Started <b>{{when .StartedAt}}</b></div>
   <div>Duration <b>{{duration .DurationMS}}</b></div>
+  {{with .Policy}}<div>Policy <b>{{.Name}}</b>{{if .Excluded}} ({{.Excluded}} control{{if ne .Excluded 1}}s{{end}} excluded){{end}}</div>{{end}}
 </div>
 
 <div class="summary">
@@ -89,6 +93,7 @@ footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
     <div class="tile pass"><div class="n">{{.Summary.Pass}}</div><div class="l">Passed</div></div>
     <div class="tile fail"><div class="n">{{.Summary.Fail}}</div><div class="l">Failed</div></div>
     <div class="tile error"><div class="n">{{.Summary.Error}}</div><div class="l">Errors</div></div>
+    {{if .Summary.Waived}}<div class="tile waived"><div class="n">{{.Summary.Waived}}</div><div class="l">Waived</div></div>{{end}}
   </div>
 </div>
 
@@ -97,10 +102,11 @@ footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
   <button type="button" data-filter="fail" aria-pressed="false">Failed</button>
   <button type="button" data-filter="error" aria-pressed="false">Errors</button>
   <button type="button" data-filter="pass" aria-pressed="false">Passed</button>
+  {{if .Summary.Waived}}<button type="button" data-filter="waived" aria-pressed="false">Waived</button>{{end}}
 </div>
 
 {{range .Sections}}
-<section class="card checks{{if .Fail}} has-fail{{end}}{{if .Error}} has-error{{end}}{{if .Pass}} has-pass{{end}}">
+<section class="card checks{{if .Fail}} has-fail{{end}}{{if .Error}} has-error{{end}}{{if .Pass}} has-pass{{end}}{{if .Waived}} has-waived{{end}}">
   <h2><span>{{section .Name}}</span><small>{{len .Checks}} check{{if ne (len .Checks) 1}}s{{end}}{{if .Fail}} · {{.Fail}} failed{{end}}{{if .Error}} · {{.Error}} errors{{end}}</small></h2>
   <table>
   {{range .Checks}}
@@ -111,6 +117,7 @@ footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
         <div class="ctitle">{{.Title}}</div>
         {{if .Message}}<div class="msg">{{.Message}}</div>{{end}}
         {{if .Error}}<div class="msg">{{.Error}}</div>{{end}}
+        {{with .Waiver}}<div class="waiver">Waived: {{.Reason}}{{if .ApprovedBy}} · approved by {{.ApprovedBy}}{{end}}{{if .Expires}} · until {{.Expires}}{{end}}{{if .Ticket}} · {{.Ticket}}{{end}}</div>{{end}}
         <div class="key">{{.Key}}</div>
         {{if or .Details .Output .Stderr}}
         <details><summary>Details</summary>
@@ -126,6 +133,22 @@ footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
   </table>
 </section>
 {{end}}
+
+{{with .Policy}}{{if or .ExpiredWaivers .UnusedWaivers}}
+<section class="card">
+  <h2><span>Waivers to review</span><small>policy {{.Name}}</small></h2>
+  <table>
+  {{range .ExpiredWaivers}}
+    <tr><td class="status"><span class="pill fail">EXPIRED</span></td><td class="id">{{.ID}}</td>
+      <td><div class="ctitle">{{.Title}}</div><div class="msg">Expired {{.Expires}}: {{.Reason}}. The check counts as a failure again.</div><div class="key">{{.Key}}</div></td></tr>
+  {{end}}
+  {{range .UnusedWaivers}}
+    <tr><td class="status"><span class="pill pass">UNUSED</span></td><td class="id">{{.ID}}</td>
+      <td><div class="ctitle">{{.Title}}</div><div class="msg">The check now passes; the waiver can be removed.</div><div class="key">{{.Key}}</div></td></tr>
+  {{end}}
+  </table>
+</section>
+{{end}}{{end}}
 
 {{if .Collectors}}
 <section class="card">

@@ -14,6 +14,7 @@ import (
 
 	"checklist/catalog"
 	"checklist/collector"
+	"checklist/policy"
 )
 
 type Problem struct {
@@ -53,6 +54,7 @@ func Run(cat *catalog.Catalog) []Problem {
 			}
 		}
 	}
+	l.policies()
 	slices.SortFunc(l.problems, func(a, b Problem) int {
 		if c := strings.Compare(a.Path, b.Path); c != 0 {
 			return c
@@ -294,6 +296,16 @@ func (l *linter) networkScript(path string) {
 		}
 		if m := plainVerdct.FindString(c.text); m != "" && !strings.Contains(m, `"PASS"`) && !strings.Contains(m, `"FAIL"`) {
 			l.add(path, c.n, `network verdicts are exactly "PASS" or "FAIL"`)
+		}
+	}
+}
+
+// policies validates every policy file shipped in policies/.
+func (l *linter) policies() {
+	files, _ := filepath.Glob(filepath.Join(l.cat.Root, "policies", "*.yaml"))
+	for _, f := range files {
+		if _, err := policy.Load(f, l.cat.HasKey); err != nil {
+			l.add(f, 0, "%v", err)
 		}
 	}
 }

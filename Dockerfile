@@ -40,6 +40,7 @@ COPY iosxe iosxe
 COPY junos junos
 COPY iosxr iosxr
 COPY nxos nxos
+COPY policies policies
 COPY --from=build /out/checklist checklist/checklist
 
 USER secbaseline

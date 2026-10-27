@@ -17,6 +17,7 @@ import (
 	"checklist/docs"
 	"checklist/drift"
 	"checklist/lint"
+	"checklist/policy"
 	"checklist/report"
 	"checklist/runner"
 	"checklist/server"
@@ -87,6 +88,7 @@ func runCmd() *cobra.Command {
 		root, platform, config, jsonOut, htmlOut, shell string
 		uploadURL, token                                string
 		sarifOut, junitOut, csvOut                      string
+		policyFile                                      string
 		only                                            []string
 		jobs                                            int
 		timeout                                         time.Duration
@@ -116,9 +118,16 @@ func runCmd() *cobra.Command {
 					return err
 				}
 			}
+			var pol *policy.Policy
+			if policyFile != "" {
+				if pol, err = policy.Load(policyFile, cat.HasKey); err != nil {
+					return err
+				}
+			}
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer stop()
 			rep, err := runner.Run(ctx, cat, runner.Options{
+				Policy:     pol,
 				Platform:   platform,
 				Config:     config,
 				Only:       only,
@@ -160,8 +169,17 @@ func runCmd() *cobra.Command {
 				fmt.Fprintln(os.Stderr, "uploaded:", url)
 			}
 			s := rep.Summary
-			fmt.Fprintf(os.Stderr, "%s: %d checks, %d passed, %d failed, %d errors (score %.1f%%)\n",
-				rep.Platform.Key, s.Total, s.Pass, s.Fail, s.Error, s.Score)
+			waived := ""
+			if s.Waived > 0 {
+				waived = fmt.Sprintf(", %d waived", s.Waived)
+			}
+			fmt.Fprintf(os.Stderr, "%s: %d checks, %d passed, %d failed%s, %d errors (score %.1f%%)\n",
+				rep.Platform.Key, s.Total, s.Pass, s.Fail, waived, s.Error, s.Score)
+			if rep.Policy != nil {
+				for _, w := range rep.Policy.ExpiredWaivers {
+					fmt.Fprintf(os.Stderr, "warning: waiver for %s expired on %s\n", w.Key, w.Expires)
+				}
+			}
 			return err
 		},
 	}
@@ -179,6 +197,7 @@ func runCmd() *cobra.Command {
 	f.StringVar(&sarifOut, "sarif", "", "also write SARIF 2.1.0 (code scanning) to this path")
 	f.StringVar(&junitOut, "junit", "", "also write JUnit XML (CI test results) to this path")
 	f.StringVar(&csvOut, "csv", "", "also write CSV (spreadsheets) to this path")
+	f.StringVar(&policyFile, "policy", "", "policy file: which controls apply and which failures are waived")
 	f.StringVar(&uploadURL, "upload", "", "send the report to a dashboard (checklist serve) at this URL")
 	f.StringVar(&token, "token", "", "dashboard token (default: $CHECKLIST_SERVER_TOKEN)")
 	return cmd

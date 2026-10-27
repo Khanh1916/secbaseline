@@ -77,7 +77,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -85,7 +85,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -95,6 +95,19 @@ if ! grep -qvE '^[[:space:]]*([!#].*)?$' "$CONFIG_FILE"; then
     echo "FAIL"
     exit 1
 fi
+
+# "ssh server", "ssh server ipv4|ipv6 access-list ..." and "ssh server netconf"
+# without a vrf run the server in the default VRF. Rewrite them as
+# "... vrf default ..." in a copy, so the checks below see every SSH server
+# instead of passing a configuration whose only server is in the default VRF.
+NORMALIZED=$(mktemp) || { echo "FAIL"; exit 1; }
+trap 'rm -f "$NORMALIZED"' EXIT
+sed -E -e 's/[[:space:]]+$//' \
+    -e 's/^ssh server$/ssh server vrf default/' \
+    -e 's/^ssh server (ipv4|ipv6) access-list/ssh server vrf default \1 access-list/' \
+    -e 's/^ssh server netconf( port [0-9]+)?$/ssh server netconf vrf default\1/' \
+    "$CONFIG_FILE" > "$NORMALIZED"
+CONFIG_FILE="$NORMALIZED"
 
 # Check if ssh server has complete access-lists (both ipv4 and ipv6)
 check_complete_access_lists() {
@@ -137,7 +150,7 @@ check_complete_access_lists() {
     for acl_name in $acl_names; do
         # Extract ACL block
         local acl_lines=$(sed -n "/^[[:space:]]*ipv[46][[:space:]]\+access-list[[:space:]]\+$acl_name[[:space:]]*$/,/^[[:space:]]*!/p" "$CONFIG_FILE" | \
-                         head -n -1 | tail -n +2)
+                         sed '$d' | tail -n +2)
         
         # Get permit rules only
         local acl_rules=$(echo "$acl_lines" | grep "^[[:space:]]*[0-9]\+[[:space:]]\+permit")
@@ -228,7 +241,7 @@ check_mpp_mandatory() {
                     # Extract inband block using "   !" (3 spaces) as end marker
                     vrf_content=$(echo "$mpp_content" | \
                                  sed -n '/^[[:space:]]*inband[[:space:]]*$/,/^   ![[:space:]]*$/p' | \
-                                 head -n -1)
+                                 sed '$d')
                     
                     if [ -z "$vrf_content" ]; then
                         echo "FAIL"
@@ -248,7 +261,7 @@ check_mpp_mandatory() {
                 # Extract entire out-of-band block using "   !" (3 spaces) as end marker
                 vrf_content=$(echo "$mpp_content" | \
                              sed -n '/^[[:space:]]*out-of-band[[:space:]]*$/,/^   ![[:space:]]*$/p' | \
-                             head -n -1)
+                             sed '$d')
                 
                 if [ -z "$vrf_content" ]; then
                     echo "FAIL"

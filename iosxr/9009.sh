@@ -8,13 +8,13 @@
 #
 # VALIDATION CRITERIA:
 # TIMEZONE REQUIREMENT:
-# - Must have exact configuration: "clock timezone areaname Asia/Saigon"
-# - Configuration is case-sensitive and format must be exact
+# - Must have "clock timezone <zone label> Asia/Saigon" (CHECKLIST_TZ_NAME);
+#   the label is free text ("ICT", "areaname", ...), the region must match
 # 
 # NTP SERVER REQUIREMENT:
 # - Must have "ntp" section in configuration
-# - Must contain "server" configuration with IP address
-# - Must contain "source" configuration specifying interface
+# - Must contain "server" configuration (IPv4, IPv6 or host name, any VRF)
+# - Must contain "source" configuration specifying interface (any interface)
 # - Both server and source must be within the ntp block
 #
 # USAGE:
@@ -44,7 +44,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     # echo ""
     # echo "This script validates Cisco IOS XR timezone and NTP configuration."
     # echo ""
@@ -62,60 +62,38 @@ CONFIG_FILE="$1"
 
 # Check file exists and is readable
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "ERROR: File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
 if [ ! -r "$CONFIG_FILE" ]; then
-    echo "ERROR: Cannot read file: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
 # Expected time zone name; override with CHECKLIST_TZ_NAME (e.g. Europe/Berlin).
 TZ_NAME="${CHECKLIST_TZ_NAME:-Asia/Saigon}"
 
-# Function to check timezone configuration
+# Function to check timezone configuration: any zone label, the expected region
 check_timezone_config() {
-    # Look for exact timezone configuration
-    if grep -q "^[[:space:]]*clock[[:space:]]\+timezone[[:space:]]\+areaname[[:space:]]\+${TZ_NAME}[[:space:]]*$" "$CONFIG_FILE"; then
-        return 0
-    else
-        return 1
-    fi
+    awk -v tz="$TZ_NAME" '
+      { sub(/[ \t\r]+$/, "") }
+      $1 == "clock" && $2 == "timezone" && NF == 4 && $4 == tz { found = 1 }
+      END { exit (found ? 0 : 1) }
+    ' "$CONFIG_FILE"
 }
 
-# Function to check NTP configuration
+# Function to check NTP configuration: the ntp block has a server (any
+# address or name, any VRF) and a source interface (any interface)
 check_ntp_config() {
-    # Extract NTP block from configuration - must start at beginning of line
-    local ntp_content=$(sed -n '/^ntp[[:space:]]*$/,/^![[:space:]]*$/p' "$CONFIG_FILE")
-    
-    if [ -z "$ntp_content" ]; then
-        return 1
-    fi
-    
-    # Check for server configuration in NTP block
-    if ! echo "$ntp_content" | grep -q "^[[:space:]]\+server[[:space:]]\+"; then
-        return 1
-    fi
-    
-    # Check for source configuration in NTP block
-    if ! echo "$ntp_content" | grep -q "^[[:space:]]\+source[[:space:]]\+"; then
-        return 1
-    fi
-    
-    # Additional validation - check if server has IP address
-    local server_line=$(echo "$ntp_content" | grep "^[[:space:]]\+server[[:space:]]\+")
-    if ! echo "$server_line" | grep -q "[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+"; then
-        return 1
-    fi
-    
-    # Additional validation - check if source has interface
-    local source_line=$(echo "$ntp_content" | grep "^[[:space:]]\+source[[:space:]]\+")
-    if ! echo "$source_line" | grep -qE "(Eth|GigabitEthernet|TenGigE|FastEthernet|MgmtEth|Loopback)"; then
-        return 1
-    fi
-    
-    return 0
+    awk '
+      { sub(/[ \t\r]+$/, "") }
+      /^ntp$/ { in_ntp = 1; next }
+      /^[^ ]/ { in_ntp = 0 }
+      in_ntp && $1 == "server" && NF >= 2 { server = 1 }
+      in_ntp && $1 == "source" && NF >= 2 { source = 1 }
+      END { exit ((server && source) ? 0 : 1) }
+    ' "$CONFIG_FILE"
 }
 
 # Main validation logic

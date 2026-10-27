@@ -58,7 +58,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -66,7 +66,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -103,17 +103,17 @@ check_small_services() {
     printf '%s\n' "${failed_services[@]}"
 }
 
-# Check for forbidden TFTP services
+# Check for forbidden TFTP services (default VRF or "vrf <name>")
 check_tftp_services() {
     local failed_services=()
     
     # Check for TFTP IPv4 server
-    if grep -qi "^tftp[[:space:]]\+vrf.*ipv4[[:space:]]\+server" "$CONFIG_FILE"; then
+    if grep -qi "^tftp[[:space:]]\+\(vrf[[:space:]]\+[^[:space:]]\+[[:space:]]\+\)\{0,1\}ipv4[[:space:]]\+server" "$CONFIG_FILE"; then
         failed_services+=("TFTP IPv4 server enabled")
     fi
     
     # Check for TFTP IPv6 server
-    if grep -qi "^tftp[[:space:]]\+vrf.*ipv6[[:space:]]\+server" "$CONFIG_FILE"; then
+    if grep -qi "^tftp[[:space:]]\+\(vrf[[:space:]]\+[^[:space:]]\+[[:space:]]\+\)\{0,1\}ipv6[[:space:]]\+server" "$CONFIG_FILE"; then
         failed_services+=("TFTP IPv6 server enabled")
     fi
     
@@ -152,17 +152,17 @@ check_dhcp_services() {
     printf '%s\n' "${failed_services[@]}"
 }
 
-# Check for forbidden TELNET services
+# Check for forbidden TELNET services (default VRF or "vrf <name>")
 check_telnet_services() {
     local failed_services=()
     
     # Check for TELNET IPv4 server
-    if grep -qi "^telnet[[:space:]]\+ipv4[[:space:]]\+server" "$CONFIG_FILE"; then
+    if grep -qi "^telnet[[:space:]]\+\(vrf[[:space:]]\+[^[:space:]]\+[[:space:]]\+\)\{0,1\}ipv4[[:space:]]\+server" "$CONFIG_FILE"; then
         failed_services+=("TELNET IPv4 server enabled")
     fi
     
     # Check for TELNET IPv6 server
-    if grep -qi "^telnet[[:space:]]\+ipv6[[:space:]]\+server" "$CONFIG_FILE"; then
+    if grep -qi "^telnet[[:space:]]\+\(vrf[[:space:]]\+[^[:space:]]\+[[:space:]]\+\)\{0,1\}ipv6[[:space:]]\+server" "$CONFIG_FILE"; then
         failed_services+=("TELNET IPv6 server enabled")
     fi
     

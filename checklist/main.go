@@ -189,7 +189,7 @@ func runCmd() *cobra.Command {
 	f.StringVarP(&config, "config", "c", "", "saved device configuration to audit (network platforms)")
 	f.StringSliceVar(&only, "only", nil, "run only controls/collectors whose key starts with these prefixes")
 	f.IntVarP(&jobs, "jobs", "j", 4, "checks to run in parallel")
-	f.DurationVar(&timeout, "timeout", 2*time.Minute, "timeout per check")
+	f.DurationVar(&timeout, "timeout", 2*time.Minute, "timeout per check and per collector")
 	f.StringVar(&shell, "shell", "bash", "interpreter for .sh scripts")
 	f.BoolVar(&noCollectors, "no-collectors", false, "skip inventory collectors")
 	f.StringVarP(&jsonOut, "output", "o", "-", `JSON report path ("-" for stdout)`)

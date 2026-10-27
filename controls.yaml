@@ -480,33 +480,33 @@ controls:
 collectors:
   - key: collect.ssh_keys
     title: SSH authorized_keys per user
-    ids: {ubuntu: 1091, debian: 11091, redhat: 2092, rocky: 3092, centos: 5092, suse: 291, windows: 4027}
+    ids: {ubuntu: 1091, debian: 11091, redhat: 2092, rocky: 3092, centos: 5092, suse: 291, oraclelinux: 6091, windows: 4027}
   - key: collect.accounts
     title: Local account names
-    ids: {ubuntu: 1092, debian: 11092, redhat: 2093, rocky: 3093, centos: 5093, suse: 292, windows: 4028}
+    ids: {ubuntu: 1092, debian: 11092, redhat: 2093, rocky: 3093, centos: 5093, suse: 292, oraclelinux: 6092, windows: 4028}
   - key: collect.users_groups
     title: Users, groups and sudoers/administrators membership
-    ids: {ubuntu: 1093, debian: 11093, redhat: 2094, rocky: 3094, centos: 5094, suse: 293, windows: 4029}
+    ids: {ubuntu: 1093, debian: 11093, redhat: 2094, rocky: 3094, centos: 5094, suse: 293, oraclelinux: 6093, windows: 4029}
   - key: collect.password_policy
     title: Effective password policy
-    ids: {ubuntu: 1094, debian: 11094, redhat: 2095, rocky: 3095, centos: 5095, suse: 294, windows: 4030}
+    ids: {ubuntu: 1094, debian: 11094, redhat: 2095, rocky: 3095, centos: 5095, suse: 294, oraclelinux: 6094, windows: 4030}
   - key: collect.patching
     title: OS, kernel and patch level
-    ids: {ubuntu: 1095, debian: 11095, redhat: 2096, rocky: 3096, centos: 5096, suse: 295, windows: 4031}
+    ids: {ubuntu: 1095, debian: 11095, redhat: 2096, rocky: 3096, centos: 5096, suse: 295, oraclelinux: 6095, windows: 4031}
   - key: collect.file_checksums
     title: SHA-256 checksums of the files given with --files
     needs: files
-    ids: {ubuntu: 1096, debian: 11096, redhat: 2097, rocky: 3097, centos: 5097, suse: 296, windows: 4032}
+    ids: {ubuntu: 1096, debian: 11096, redhat: 2097, rocky: 3097, centos: 5097, suse: 296, oraclelinux: 6096, windows: 4032}
   - key: collect.file_listing
     title: Files in the directories given with --folders
     needs: folders
-    ids: {ubuntu: 1097, debian: 11097, redhat: 2098, rocky: 3098, centos: 5098, suse: 297, windows: 4033}
+    ids: {ubuntu: 1097, debian: 11097, redhat: 2098, rocky: 3098, centos: 5098, suse: 297, oraclelinux: 6097, windows: 4033}
   - key: collect.listening_ports
     title: Non-loopback listening TCP/UDP ports
-    ids: {ubuntu: 1098, debian: 11098, redhat: 2099, rocky: 3099, centos: 5099, suse: 298, windows: 4034}
+    ids: {ubuntu: 1098, debian: 11098, redhat: 2099, rocky: 3099, centos: 5099, suse: 298, oraclelinux: 6098, windows: 4034}
   - key: collect.firewall_rules
     title: Host firewall rules
-    ids: {ubuntu: 1099, debian: 11099, redhat: 2100, rocky: 3100, centos: 5100, suse: 299, windows: 4035}
+    ids: {ubuntu: 1099, debian: 11099, redhat: 2100, rocky: 3100, centos: 5100, suse: 299, oraclelinux: 6099, windows: 4035}
   - key: collect.log_config
     title: Logging configuration and agent status
-    ids: {ubuntu: 1100, debian: 11100, redhat: 2101, rocky: 3101, centos: 5101, suse: 300, windows: 4036}
+    ids: {ubuntu: 1100, debian: 11100, redhat: 2101, rocky: 3101, centos: 5101, suse: 300, oraclelinux: 6100, windows: 4036}

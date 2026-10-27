@@ -1,6 +1,6 @@
 # Oracle Linux checks
 
-CIS-style hardening checks for Oracle Linux, IDs `100–190`. 
+CIS-style hardening checks for Oracle Linux, IDs `100–190`. Inventory collectors `6091–6100` are served by the Go binary (`checklist <id>`), not by scripts here.
 
 Each script runs on the target host with no arguments, prints optional `INFO:` detail
 lines followed by exactly one `PASS: <reason>` or `FAIL: <reason>` line, and exits `0` (pass) or
@@ -26,7 +26,7 @@ sudo bash oraclelinux/100.sh; echo "exit=$?"
 
 - IDs are `99 + index` relative to the RHEL family (`100.sh` = RHEL `2001.sh`).
 - The banner check `129.sh` looks for "Oracle Linux".
-- No inventory collector IDs are assigned to Oracle Linux yet, so `checklist run` executes checks only.
+- Collector IDs `6091–6100` sit outside the check range: `191–200` would overlap SUSE check `200`.
 
 <!-- BEGIN GENERATED: checklist docs -->
 
@@ -125,5 +125,22 @@ sudo bash oraclelinux/100.sh; echo "exit=$?"
 | [188](188.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |
 | [189](189.sh) | Ensure password expiration warning is 7 days or more | `linux.auth.pass_warn_age` |
 | [190](190.sh) | Ensure the inactive password lock (INACTIVE) is configured | `linux.auth.inactive_lock` |
+
+### Inventory collectors (10)
+
+Served by the Go binary: `checklist <id>`.
+
+| ID | Collects | Key |
+|---:|---|---|
+| 6091 | SSH authorized_keys per user | `collect.ssh_keys` |
+| 6092 | Local account names | `collect.accounts` |
+| 6093 | Users, groups and sudoers/administrators membership | `collect.users_groups` |
+| 6094 | Effective password policy | `collect.password_policy` |
+| 6095 | OS, kernel and patch level | `collect.patching` |
+| 6096 | SHA-256 checksums of the files given with --files | `collect.file_checksums` |
+| 6097 | Files in the directories given with --folders | `collect.file_listing` |
+| 6098 | Non-loopback listening TCP/UDP ports | `collect.listening_ports` |
+| 6099 | Host firewall rules | `collect.firewall_rules` |
+| 6100 | Logging configuration and agent status | `collect.log_config` |
 
 <!-- END GENERATED -->

@@ -235,12 +235,8 @@ gh attestation verify oci://ghcr.io/khanh1916/secbaseline:latest --repo Khanh191
 
 ## Known limitations
 
-- On RHEL, SUSE and Oracle Linux, `linux.services.mta_local_only` reads only Postfix's
-  `inet_interfaces`.
-- IOS XE `7007` accepts AAA only as `aaa authentication login default local`; `7008` does not
-  recognize named server groups (`aaa group server`).
-- Windows password and lockout checks parse `net accounts` and expect an English-language Windows.
-- Oracle Linux has no inventory collector IDs.
+- Windows password complexity, reversible encryption and audit policy checks need an elevated
+  session; without one they report `FAIL` with the reason.
 
 ## Author
 

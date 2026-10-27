@@ -1,16 +1,35 @@
-$audit_output = auditpol /get /subcategory:"Directory Service Changes" 2>$null
+# Ensure 'Directory Service Changes' auditing includes Success
+$name = "Directory Service Changes"
+$subcategory = "{0CCE923C-69AE-11D9-BED3-505054503030}"
 
-if (-not $audit_output) {
-    Write-Output "FAIL: Directory Service Changes auditing setting is not Success"
+# auditpol /backup lists subcategories by GUID with a numeric setting
+# (1 = Success, 2 = Failure, 3 = both) in every display language. It needs an
+# elevated session.
+$file = Join-Path $env:TEMP ("secbaseline-" + [guid]::NewGuid().ToString() + ".csv")
+$setting = $null
+try {
+    auditpol /backup /file:$file *> $null
+    # Without the privilege auditpol fails but still leaves an empty file.
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $file)) {
+        $setting = 0
+        $row = Import-Csv $file -Header Machine, Target, Subcategory, Guid, Inclusion, Exclusion, Value |
+            Where-Object { $_.Guid -eq $subcategory } | Select-Object -First 1
+        if ($row) { $setting = [int]$row.Value }
+    }
+} finally {
+    Remove-Item $file -Force -ErrorAction SilentlyContinue
+}
+
+if ($null -eq $setting) {
+    Write-Output "FAIL: Could not read the audit policy; run from an elevated session"
     exit 1
 }
 
-$audit_setting = ($audit_output | Select-String "Directory Service Changes").ToString().Split()[-1]
-
-if ($audit_setting -ne "Success") {
-    Write-Output "FAIL: Directory Service Changes auditing setting is not Success"
+$labels = @{ 0 = "No Auditing"; 1 = "Success"; 2 = "Failure"; 3 = "Success and Failure" }
+if (($setting -band 1) -eq 0) {
+    Write-Output "FAIL: $name auditing is set to $($labels[$setting]), which does not include Success"
     exit 1
 }
 
-Write-Output "PASS: Directory Service Changes auditing setting is Success"
+Write-Output "PASS: $name auditing is set to $($labels[$setting])"
 exit 0

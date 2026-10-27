@@ -73,6 +73,18 @@ jobs:
         working-directory: checklist
         run: go test ./...
 
+      - name: Every Windows check reads its setting
+        shell: bash
+        run: |
+          (cd checklist && go build -o "$RUNNER_TEMP/checklist.exe" .)
+          "$RUNNER_TEMP/checklist.exe" run -p windows --no-collectors -o "$RUNNER_TEMP/windows.json"
+          jq -r '.checks[] | "\(.id) \(.status) \(.message // .error)"' "$RUNNER_TEMP/windows.json"
+          jq -e '.summary.error == 0' "$RUNNER_TEMP/windows.json" >/dev/null
+          # The runner is elevated, so secedit and auditpol must succeed.
+          if jq -e '[.checks[] | select(.key | test("^windows[.](password|lockout|audit)[.]")) | select(.message | test("^Could not read"))] | length > 0' "$RUNNER_TEMP/windows.json" >/dev/null; then
+            echo "checks could not read their setting on an elevated runner"; exit 1
+          fi
+
       - name: Lint
         shell: bash
         run: |

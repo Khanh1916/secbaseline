@@ -114,7 +114,7 @@ func Run(ctx context.Context, cat *catalog.Catalog, opts Options) (*Report, erro
 	wg.Wait()
 
 	for _, it := range collectors {
-		rep.Collectors = append(rep.Collectors, runCollector(it, opts))
+		rep.Collectors = append(rep.Collectors, runCollector(ctx, it, opts))
 	}
 
 	now := time.Now
@@ -203,7 +203,10 @@ func scriptCommand(ctx context.Context, kind, path string, opts Options) *exec.C
 	return cmd
 }
 
-func runCollector(it catalog.Item, opts Options) (r CollectorResult) {
+// collect runs a collector by ID; tests replace it.
+var collect = collector.Run
+
+func runCollector(ctx context.Context, it catalog.Item, opts Options) (r CollectorResult) {
 	id := strconv.Itoa(it.IDs[opts.Platform])
 	r = CollectorResult{Key: it.Key, ID: id, Title: it.Title}
 	switch {
@@ -215,19 +218,43 @@ func runCollector(it catalog.Item, opts Options) (r CollectorResult) {
 		return r
 	}
 
-	start := time.Now()
-	defer func() {
-		r.DurationMS = time.Since(start).Milliseconds()
-		if v := recover(); v != nil {
-			r.Status, r.Error, r.Output = StatusError, fmt.Sprint("collector panicked: ", v), ""
-		}
-	}()
-	out, err := collector.Run(id, opts.Input)
-	if err != nil {
-		r.Status, r.Error = StatusError, err.Error()
-		return r
+	// Collectors are Go code that can block in a command or a file read that
+	// nothing can interrupt, so the run stops waiting after the timeout and
+	// leaves the collector to finish in the background.
+	cctx, cancel := context.WithTimeout(ctx, opts.Timeout)
+	defer cancel()
+	type result struct {
+		out string
+		err error
 	}
-	r.Status, r.Output = StatusOK, strings.TrimRight(out, "\n")
+	done := make(chan result, 1) // buffered, so an abandoned collector can still finish
+	run := collect
+	start := time.Now()
+	go func() {
+		defer func() {
+			if v := recover(); v != nil {
+				done <- result{err: fmt.Errorf("collector panicked: %v", v)}
+			}
+		}()
+		out, err := run(id, opts.Input)
+		done <- result{out, err}
+	}()
+
+	select {
+	case res := <-done:
+		r.DurationMS = time.Since(start).Milliseconds()
+		if res.err != nil {
+			r.Status, r.Error = StatusError, res.err.Error()
+			return r
+		}
+		r.Status, r.Output = StatusOK, strings.TrimRight(res.out, "\n")
+	case <-cctx.Done():
+		r.DurationMS = time.Since(start).Milliseconds()
+		r.Status, r.Error = StatusError, cctx.Err().Error()
+		if errors.Is(cctx.Err(), context.DeadlineExceeded) {
+			r.Error = fmt.Sprintf("timed out after %s", opts.Timeout)
+		}
+	}
 	return r
 }
 

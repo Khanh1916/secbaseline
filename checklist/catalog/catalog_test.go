@@ -19,8 +19,8 @@ func TestLoadRepositoryCatalog(t *testing.T) {
 	if got := len(c.ControlsFor("iosxe")); got != 14 {
 		t.Errorf("iosxe controls = %d, want 14", got)
 	}
-	if got := len(c.CollectorsFor("oraclelinux")); got != 0 {
-		t.Errorf("oraclelinux collectors = %d, want 0", got)
+	if got := len(c.CollectorsFor("oraclelinux")); got != 10 {
+		t.Errorf("oraclelinux collectors = %d, want 10", got)
 	}
 	if p := c.ScriptPath("windows", 4001); filepath.Base(p) != "4001.ps1" {
 		t.Errorf("windows script path = %s", p)

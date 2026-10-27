@@ -1,119 +1,71 @@
 #!/bin/bash
 
 # Cisco IOS-XE Configuration Authentication Validation Script
-# Commercial Software Compatible - Version 1.0
-# 
-# Purpose: Validate authentication configuration on Cisco IOS-XE devices
-# Ensures proper access control and security compliance
+#
+# Purpose: Validate that the console and auxiliary lines require authentication
 # Input: Configuration file path as argument
 # Output: PASS or FAIL
-# 
+#
 # Usage: ./7007.sh <config_file>
 # Example: ./7007.sh running-config.txt
 #
-# Requirements:
-# - Configuration file must be readable
-# - Script expects standard Cisco IOS-XE configuration format
-# - Supports running-config and startup-config files
-#
 # Validation Logic:
-# 1. Priority Check - AAA Authentication (Preferred Method):
-#    - Requires both: "aaa new-model" AND "aaa authentication login default local"
-#    - If both present -> PASS immediately (highest security)
+# 1. With "aaa new-model", lines authenticate through AAA login method lists
+#    and line passwords are ignored:
+#    - A line uses the list named by "login authentication <list>", otherwise
+#      the "default" list
+#    - The list must be defined ("aaa authentication login <list> <methods>")
+#      and its first method must not be "none"
+#    - Without a default list IOS lets console logins in without any check,
+#      while other lines fall back to the local user database
 #
-# 2. Fallback Check - Line Authentication (Legacy Method):
-#    - Validates line console (con) and line auxiliary (aux) blocks
-#    - Each configured line block must have authentication:
-#      * password <password> OR
-#      * login local OR  
-#      * login authentication <method>
-#    - If line blocks exist without authentication -> FAIL
-#    - No line con block -> FAIL (IOS XE always lists line con 0; a console
-#      without login settings does not authenticate)
-#    - No line aux block -> not applicable (many platforms have no AUX port)
+# 2. Without "aaa new-model", a line needs "login local", or "login" together
+#    with a line "password"
 #
-# Security Compliance:
-# - Prevents unauthorized device access via console/auxiliary ports
-# - Enforces authentication on all configured access methods
-# - Supports both modern AAA and legacy line-based authentication
+# - No line con block -> FAIL (IOS XE always lists line con 0)
+# - No line aux block -> not applicable (many platforms have no AUX port)
 #
 # Return Codes:
-# 0 = PASS (authentication properly configured)
-# 1 = FAIL (missing or incomplete authentication)
-# 2 = Invalid input or file access error
-#
-# Technical Notes:
-# - Case sensitive pattern matching for IOS-XE commands
-# - Handles multi-line configuration blocks correctly
-# - Compatible with all standard Cisco configuration formats
-
-# Check input parameter and file existence
-if [ -z "$1" ] || [ ! -f "$1" ]; then
-  echo "Usage: $0 <config-file>"
-  exit 1
-fi
+# 0 = PASS (console and auxiliary lines require authentication)
+# 1 = FAIL (missing or incomplete authentication, or unreadable file)
 
 config_file="$1"
 
-# If both required AAA lines are present -> PASS immediately
-if grep -q "^aaa authentication login default local" "$config_file" && \
-   grep -q "^aaa new-model" "$config_file"; then
-  echo "PASS"
-  exit 0
-fi
-
-# Function to check line block (con or aux); required=1 makes a missing block FAIL
-check_line_block() {
-  local type="$1"
-  local required="$2"
-  awk -v type="$type" -v required="$required" '
-    BEGIN { in_block = 0; found = 0; valid = 0; }
-
-    # Start of line type block
-    $0 ~ "^line "type {
-      in_block = 1;
-      found = 1;
-      block = $0;
-      next;
-    }
-
-    # Any other top-level command ends the current block
-    /^[^ ]/ {
-      in_block = 0;
-    }
-
-    # Within block, look for password or login local
-    in_block {
-      if ($0 ~ /^ ?password / || $0 ~ /^ ?login local/ || $0 ~ /^ ?login authentication /) {
-        valid = 1;
-      }
-    }
-
-    END {
-      # No block: FAIL when required, otherwise not applicable
-      if (found == 0) {
-        exit required ? 1 : 0;
-      }
-      # If block exists but missing required authentication -> FAIL
-      if (valid == 0) {
-        exit 1;
-      }
-    }
-  ' "$config_file"
-}
-
-# Check each line type
-check_line_block "con" 1
-res_con=$?
-
-check_line_block "aux" 0
-res_aux=$?
-
-# Aggregate results
-if [ $res_con -eq 0 ] && [ $res_aux -eq 0 ]; then
-  echo "PASS"
-  exit 0
-else
+if [ -z "$config_file" ] || [ ! -f "$config_file" ]; then
   echo "FAIL"
   exit 1
 fi
+
+if awk '
+  function authenticated(type,   list) {
+    if (aaa) {
+      list = (type in auth_list) ? auth_list[type] : "default"
+      if (!(list in methods)) return list == "default" && type != "con"
+      return methods[list] != "none"
+    }
+    return login_local[type] || (login[type] && password[type])
+  }
+
+  /^aaa new-model([ \t]|$)/ { aaa = 1 }
+  /^aaa authentication login / { methods[$4] = $5 }
+
+  /^line (con|aux) / { type = $2; seen[type] = 1; next }
+  /^[^ ]/ { type = "" }
+
+  type != "" && /^ +login authentication / { auth_list[type] = $3 }
+  type != "" && /^ +login local([ \t]|$)/ { login_local[type] = 1 }
+  type != "" && /^ +login[ \t]*$/ { login[type] = 1 }
+  type != "" && /^ +password / { password[type] = 1 }
+
+  END {
+    if (!seen["con"] || !authenticated("con")) exit 1
+    if (seen["aux"] && !authenticated("aux")) exit 1
+    exit 0
+  }
+' "$config_file"; then
+  echo "PASS"
+  exit 0
+fi
+
+echo "FAIL"
+exit 1

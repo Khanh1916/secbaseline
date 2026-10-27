@@ -5,81 +5,47 @@
 # authentication is configured for AUX and Console access.
 #
 # VALIDATION CRITERIA:
-# - Must NOT have "aaa authentication login default none"
-# - Must NOT have "aaa authentication login console none"
-# - Returns PASS only if both criteria are met
+# - The "default" and "console" login lists must not use the method "none",
+#   neither alone ("aaa authentication login console none") nor as a fallback
+#   after server groups ("aaa authentication login console group TACGRP none");
+#   "none" lets any username in
+# - Methods are matched as words, so a group whose name contains "none" is fine
+# - Without these lines NX-OS uses the local user database, which passes
 #
 # USAGE:
 # ./10007.sh <config_file>
 #
-# EXAMPLES:
-# ./10007.sh router-config.txt
-# ./10007.sh /path/to/cisco-config.cfg
-#
 # SAMPLE CONFIGURATION:
-# no aaa authentication login default none
-# no aaa authentication login console none
+# aaa authentication login default group TACGRP
+# aaa authentication login console group TACGRP
 #
 # EXIT CODES:
 # 0 - PASS: Authentication properly configured for AUX and Console
-# 1 - FAIL: Authentication disabled for AUX or Console
-# 2 - ERROR: File not found or invalid arguments
-#
-# REQUIREMENTS:
-# - Bash 4.0 or higher
-# - Read access to configuration files
-# - grep utilities (standard on most Unix/Linux systems)
-
-# Check arguments
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
-    exit 1
-fi
+# 1 - FAIL: Authentication disabled for AUX or Console, or unreadable file
 
 CONFIG_FILE="$1"
-
-# Check file exists
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
-    exit 1
+if [ -z "$CONFIG_FILE" ] || [ ! -f "$CONFIG_FILE" ]; then
+  echo "FAIL"
+  exit 1
 fi
 
 # An empty file (or one holding only comments) is not a configuration: fail
 # instead of reporting the settings it lacks as compliant.
 if ! grep -qvE '^[[:space:]]*([!#].*)?$' "$CONFIG_FILE"; then
-    echo "FAIL"
-    exit 1
+  echo "FAIL"
+  exit 1
 fi
 
-# Function to check if any AAA authentication login has "none"
-check_aaa_auth_none() {
-    if grep -qi "^aaa[[:space:]]\+authentication[[:space:]]\+login.*none" "$CONFIG_FILE"; then
-        echo "HAS_NONE"
-    else
-        echo "NO_NONE"
-    fi
-}
-
-# Initialize validation status
-failed=false
-failure_reasons=()
-
-# Check for any AAA authentication login with "none"
-aaa_auth_status=$(check_aaa_auth_none)
-if [ "$aaa_auth_status" = "HAS_NONE" ]; then
-    failed=true
-    failure_reasons+=("Found 'none' in AAA authentication login configuration")
+if awk '
+  { sub(/[ \t\r]+$/, "") }
+  /^aaa authentication login (default|console) / {
+    for (i = 5; i <= NF; i++) if ($i == "none") bad = 1
+  }
+  END { exit (bad ? 1 : 0) }
+' "$CONFIG_FILE"; then
+  echo "PASS"
+  exit 0
 fi
 
-# Output results
-if [ "$failed" = true ]; then
-    echo "FAIL"
-    ## Optionally output specific failure reasons (uncomment if needed)
-    # for reason in "${failure_reasons[@]}"; do
-    #     echo "  - $reason" >&2
-    # done
-    exit 1
-else
-    echo "PASS"
-    exit 0
-fi
+echo "FAIL"
+exit 1

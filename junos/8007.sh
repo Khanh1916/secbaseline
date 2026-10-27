@@ -1,61 +1,58 @@
 #!/bin/bash
 
 # DESCRIPTION:
-# This script validates network device console and auxiliary port security configuration
-# following security requirements to disable unused protocols and services to limit attack risks
+# This script validates Junos console and auxiliary port security in a
+# configuration saved in set format ("show configuration | display set").
 #
 # VALIDATION LOGIC:
 # 1. Check if configuration file exists and is accessible
-# 2. Validate console port has log-out-on-disconnect enabled
-# 3. Verify console port is configured as insecure (no password prompt)
-# 4. Ensure auxiliary port is configured as insecure (disabled)
-#
-# STRICT VALIDATION REQUIREMENTS:
-# - Disable unused protocols and services to limit attack risks
-# - Console port must have automatic logout on disconnect for security
-# - Console port must be configured as insecure to prevent unauthorized access
-# - Auxiliary port must be configured as insecure to disable unused service
-# - All three security configurations must be present simultaneously
+# 2. Console port logs out on disconnect
+# 3. Console port is insecure: entering single-user mode (password recovery)
+#    then requires the root password
+# 4. Auxiliary port is insecure or disabled
+# 5. A statement that is deactivated ("deactivate system ports ...", or a
+#    deactivated parent) does not count
 #
 # SAMPLE CONFIGURATION:
 # set system ports console log-out-on-disconnect
 # set system ports console insecure
-# set system ports auxiliary insecure
-# set system diag-port-authentication
+# set system ports auxiliary insecure        (or: auxiliary disable)
 #
 # USAGE:
 # ./8007.sh <config_file>
 #
 # EXIT CODES:
-# 0 - PASS: All three security configurations are present
-# 1 - FAIL: Missing one or more required security configurations
-
-# Check Junos configuration for console and aux ports
-# PASS if all 3 security configurations are present:
-#   set system ports console log-out-on-disconnect
-#   set system ports console insecure
-#   set system ports auxiliary insecure
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <junos_config_file>"
-    exit 1
-fi
+# 0 - PASS: all required statements are present and active
+# 1 - FAIL: a statement is missing or deactivated, or the file is unreadable
 
 CONFIG="$1"
-[ ! -f "$CONFIG" ] && echo "FAIL" && exit 1
+if [ -z "$CONFIG" ] || [ ! -f "$CONFIG" ]; then
+  echo "FAIL"
+  exit 1
+fi
 
-REQUIRED_RULES=(
-    "set system ports console log-out-on-disconnect"
-    "set system ports console insecure"
-    "set system ports auxiliary insecure"
-)
+if awk '
+  # A statement is active when it is set and neither it nor a parent is deactivated.
+  function active(stmt,   p) {
+    if (!(stmt in set)) return 0
+    for (p in off) if (stmt == p || index(stmt, p " ") == 1) return 0
+    return 1
+  }
 
-for rule in "${REQUIRED_RULES[@]}"; do
-    if ! grep -qF "$rule" "$CONFIG"; then
-        echo "FAIL"
-        exit 1
-    fi
-done
+  { sub(/[ \t\r]+$/, "") }
+  /^set / { set[substr($0, 5)] = 1 }
+  /^deactivate / { off[substr($0, 12)] = 1 }
 
-echo "PASS"
-exit 0
+  END {
+    ok = active("system ports console log-out-on-disconnect") &&
+         active("system ports console insecure") &&
+         (active("system ports auxiliary insecure") || active("system ports auxiliary disable"))
+    exit (ok ? 0 : 1)
+  }
+' "$CONFIG"; then
+  echo "PASS"
+  exit 0
+fi
+
+echo "FAIL"
+exit 1

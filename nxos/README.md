@@ -36,7 +36,8 @@ organization that wrote them; set these environment variables before auditing yo
 | `CHECKLIST_SIEM_SERVERS` | `10013.sh` | at least one configured syslog server; `ip` or `ip:port`, space- or comma-separated, port defaults to 514 | `192.168.89.104:1514`, `192.168.89.104:514`, `192.168.89.105:1514`, `10.1.1.100:514`, `172.16.10.50:514` |
 
 ```bash
-CHECKLIST_SIEM_SERVERS="10.0.0.5:514 10.0.0.6" CHECKLIST_TZ_OFFSET=-5   ./checklist/checklist run --platform nxos --config running-config.txt
+CHECKLIST_SIEM_SERVERS="10.0.0.5:514 10.0.0.6" CHECKLIST_TZ_OFFSET=-5 \
+  ./checklist/checklist run --platform nxos --config running-config.txt
 ```
 
 <!-- BEGIN GENERATED: checklist docs -->

@@ -237,7 +237,6 @@ gh attestation verify oci://ghcr.io/khanh1916/secbaseline:latest --repo Khanh191
 
 - Windows password complexity, reversible encryption and audit policy checks need an elevated
   session; without one they report `FAIL` with the reason.
-- Oracle Linux has no inventory collector IDs.
 
 ## Author
 

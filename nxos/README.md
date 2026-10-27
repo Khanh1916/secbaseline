@@ -23,6 +23,9 @@ bash nxos/nxos_run_all.sh running-config.txt
 
 Sample configurations for testing: [`n9k.cfg`](n9k.cfg).
 
+[`testdata/`](testdata) holds small configurations named after the verdict they must produce
+(`<id>/pass-*.cfg`, `<id>/fail-*.cfg`); `go test ./runner` in `checklist/` runs them.
+
 On Windows, run these from Git Bash, or pass `--shell` with the path to a `bash.exe`.
 
 ## Site-specific values

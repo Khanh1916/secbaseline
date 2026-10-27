@@ -34,7 +34,7 @@
 # PASS if has "set system time-zone Asia/Saigon" and at least one "set system ntp server ..."
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <junos_config_file>"
+    echo "FAIL"
     exit 1
 fi
 

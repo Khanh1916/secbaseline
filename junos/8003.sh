@@ -7,15 +7,17 @@
 # VALIDATION LOGIC:
 # 1. Check if configuration file exists and is accessible
 # 2. Extract all login classes defined in the configuration
-# 3. Validate each class has idle-timeout set to 5 minutes
-# 4. Check system-wide default idle-timeout is set to 5 minutes
+# 3. Validate each class has an idle-timeout of 1 to 5 minutes
+# 4. Check system-wide default idle-timeout is 1 to 5 minutes
 #
 # STRICT VALIDATION REQUIREMENTS:
-# - System default idle-timeout must be set to 5 minutes
-# - All login classes must have idle-timeout configured to 5 minutes
-# - Limits session time when no data is transmitted over remote or console sessions
-# - Sessions automatically disconnect after 5 minutes of inactivity for security
+# - System default idle-timeout must be at most 5 minutes
+# - All login classes must have idle-timeout configured, at most 5 minutes
+# - A shorter timeout is stricter and passes
+# - Sessions automatically disconnect after at most 5 minutes of inactivity
 # - Note: Idle timeout limitation does not apply to super-user class (Junos does not support)
+# - Parsed with awk; grep -P is not available everywhere and silently found
+#   no classes where it fails
 #
 # SAMPLE CONFIGURATION:
 # set system login idle-timeout 5
@@ -27,51 +29,34 @@
 # ./8003.sh <config_file>
 #
 # EXIT CODES:
-# 0 - PASS: All idle timeout configurations are properly set to 5 minutes
-# 1 - FAIL: Missing or incorrect idle timeout configuration
-
-# Check input arguments
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <path-to-junos-config.set>"
-    exit 1
-fi
+# 0 - PASS: All idle timeouts are configured and at most 5 minutes
+# 1 - FAIL: Missing or too long idle timeout configuration
 
 CONFIG_FILE="$1"
-
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Error: File not found: $CONFIG_FILE"
-    exit 1
+if [ -z "$CONFIG_FILE" ] || [ ! -f "$CONFIG_FILE" ]; then
+  echo "FAIL"
+  exit 1
 fi
 
-status="PASS"
+if awk '
+  function valid(minutes) { return minutes ~ /^[0-9]+$/ && minutes >= 1 && minutes <= 5 }
 
-# Get list of all classes in configuration
-classes=$(grep -oP 'set system login class \K\S+' "$CONFIG_FILE" | sort -u)
+  { sub(/[ \t\r]+$/, "") }
+  /^set system login idle-timeout / { global = $5 }
+  /^set system login class [^ ]+ / {
+    classes[$5] = 1
+    if ($6 == "idle-timeout") timeout[$5] = $7
+  }
 
-# Check each class has idle-timeout 5
-for class in $classes; do
-    timeout_line=$(grep "set system login class $class idle-timeout" "$CONFIG_FILE")
-
-    if [[ -z "$timeout_line" ]]; then
-        status="FAIL"
-        break
-    else
-        value=$(echo "$timeout_line" | awk '{print $NF}')
-        if [[ "$value" -ne 5 ]]; then
-            status="FAIL"
-            break
-        fi
-    fi
-done
-
-# Check default configuration: set system login idle-timeout 5
-default_idle=$(grep -E "^set system login idle-timeout[ ]+5$" "$CONFIG_FILE")
-
-if [[ -z "$default_idle" ]]; then
-    status="FAIL"
+  END {
+    if (!valid(global)) exit 1
+    for (c in classes) if (!valid(timeout[c])) exit 1
+    exit 0
+  }
+' "$CONFIG_FILE"; then
+  echo "PASS"
+  exit 0
 fi
 
-# Print final result
-echo "$status"
-[ "$status" = "PASS" ] && exit 0
+echo "FAIL"
 exit 1

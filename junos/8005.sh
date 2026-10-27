@@ -7,6 +7,8 @@
 # VALIDATION LOGIC:
 # 1. Check if configuration file exists and is accessible
 # 2. Scan configuration for presence of security-risk services
+#    ("set system services <name> ..."); a service that is deactivated
+#    ("deactivate system services <name>") is not running and passes
 # 3. Validate that all unnecessary services are disabled
 # 4. Ensure only required services are enabled for security compliance
 #
@@ -67,7 +69,7 @@
 # Returns PASS if all are disabled
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <junos_config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -103,19 +105,23 @@ services_to_disable=(
     "xnm-ssl"
 )
 
-found=false
-
-for svc in "${services_to_disable[@]}"; do
-    if grep -qE "set system services[[:space:]]+$svc(\s|$)" "$CONFIG"; then
-        found=true
-        break
-    fi
-done
-
-if $found; then
-    echo "FAIL"
-    exit 1
-else
-    echo "PASS"
+# A service counts when it is set and not deactivated; deactivating
+# "system services" (or "system") switches off every service below it.
+if awk -v services="${services_to_disable[*]}" '
+  BEGIN { n = split(services, s, " "); for (i = 1; i <= n; i++) risky[s[i]] = 1 }
+  { sub(/[ \t\r]+$/, "") }
+  /^set system services / && ($4 in risky) { enabled[$4] = 1 }
+  /^deactivate system services [^ ]+$/ { off[$4] = 1 }
+  /^deactivate system( services)?$/ { all_off = 1 }
+  END {
+    if (all_off) exit 0
+    for (svc in enabled) if (!(svc in off)) exit 1
     exit 0
+  }
+' "$CONFIG"; then
+  echo "PASS"
+  exit 0
 fi
+
+echo "FAIL"
+exit 1

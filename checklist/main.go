@@ -86,6 +86,7 @@ func runCmd() *cobra.Command {
 	var (
 		root, platform, config, jsonOut, htmlOut, shell string
 		uploadURL, token                                string
+		sarifOut, junitOut, csvOut                      string
 		only                                            []string
 		jobs                                            int
 		timeout                                         time.Duration
@@ -134,8 +135,13 @@ func runCmd() *cobra.Command {
 			if werr := writeJSON(jsonOut, rep); werr != nil {
 				return werr
 			}
-			if htmlOut != "" {
-				if werr := writeHTML(htmlOut, rep); werr != nil {
+			for _, out := range []struct{ path, format string }{
+				{htmlOut, "html"}, {sarifOut, "sarif"}, {junitOut, "junit"}, {csvOut, "csv"},
+			} {
+				if out.path == "" {
+					continue
+				}
+				if werr := writeFormat(out.path, out.format, rep); werr != nil {
 					return werr
 				}
 			}
@@ -170,6 +176,9 @@ func runCmd() *cobra.Command {
 	f.BoolVar(&noCollectors, "no-collectors", false, "skip inventory collectors")
 	f.StringVarP(&jsonOut, "output", "o", "-", `JSON report path ("-" for stdout)`)
 	f.StringVar(&htmlOut, "html", "", "also write an HTML report to this path")
+	f.StringVar(&sarifOut, "sarif", "", "also write SARIF 2.1.0 (code scanning) to this path")
+	f.StringVar(&junitOut, "junit", "", "also write JUnit XML (CI test results) to this path")
+	f.StringVar(&csvOut, "csv", "", "also write CSV (spreadsheets) to this path")
 	f.StringVar(&uploadURL, "upload", "", "send the report to a dashboard (checklist serve) at this URL")
 	f.StringVar(&token, "token", "", "dashboard token (default: $CHECKLIST_SERVER_TOKEN)")
 	return cmd
@@ -253,21 +262,27 @@ and the token as password. Without a token the dashboard only listens on loopbac
 }
 
 func reportCmd() *cobra.Command {
-	var htmlOut string
+	var out, format string
 	cmd := &cobra.Command{
-		Use:     "report <report.json>",
-		Short:   "Render a JSON report from `checklist run` as HTML",
-		Example: "  ./checklist/checklist report web01.json -o web01.html",
-		Args:    cobra.ExactArgs(1),
+		Use:   "report <report.json>",
+		Short: "Convert a JSON report from `checklist run` to HTML, SARIF, JUnit XML or CSV",
+		Example: `  ./checklist/checklist report web01.json -o web01.html
+  ./checklist/checklist report web01.json -o web01.sarif
+  ./checklist/checklist report web01.json --format junit -o -`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rep, err := report.LoadJSON(args[0])
 			if err != nil {
 				return err
 			}
-			return writeHTML(htmlOut, rep)
+			if format == "" {
+				format = report.FormatFor(out)
+			}
+			return writeFormat(out, format, rep)
 		},
 	}
-	cmd.Flags().StringVarP(&htmlOut, "output", "o", "report.html", "HTML output path")
+	cmd.Flags().StringVarP(&out, "output", "o", "report.html", `output path ("-" for stdout)`)
+	cmd.Flags().StringVar(&format, "format", "", "html, sarif, junit or csv (default: from the output file extension)")
 	return cmd
 }
 
@@ -351,8 +366,8 @@ func writeJSON(path string, rep *runner.Report) error {
 	})
 }
 
-func writeHTML(path string, rep *runner.Report) error {
-	return writeFile(path, func(w io.Writer) error { return report.WriteHTML(w, rep) })
+func writeFormat(path, format string, rep *runner.Report) error {
+	return writeFile(path, func(w io.Writer) error { return report.WriteFormat(w, format, rep) })
 }
 
 func writeFile(path string, write func(io.Writer) error) error {

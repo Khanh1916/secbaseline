@@ -52,12 +52,7 @@ func (r *Result) HasDrift() bool {
 }
 
 // Subject is the device hostname for network reports and the host name otherwise.
-func Subject(rep *runner.Report) string {
-	if rep.Target != nil && rep.Target.DeviceHostname != "" {
-		return rep.Target.DeviceHostname
-	}
-	return rep.Host.Hostname
-}
+func Subject(rep *runner.Report) string { return rep.Subject() }
 
 func side(rep *runner.Report) Side {
 	return Side{Platform: rep.Platform.Key, Subject: Subject(rep), StartedAt: rep.StartedAt.Format("2006-01-02 15:04 MST"), Score: rep.Summary.Score}

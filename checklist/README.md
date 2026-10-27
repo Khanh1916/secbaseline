@@ -7,7 +7,7 @@ scripts follow the repository's conventions.
 | Command | What it does |
 |---|---|
 | `checklist run` | Run every check (and collector) for one platform; write a JSON report and optionally HTML |
-| `checklist report <file.json>` | Render a saved JSON report as a self-contained HTML page |
+| `checklist report <file.json>` | Convert a saved JSON report to HTML, SARIF, JUnit XML or CSV |
 | `checklist diff <old.json> <new.json>` | Compare two reports: regressions, fixes, other status changes and inventory drift |
 | `checklist serve` | Web dashboard that receives reports from `run --upload` and tracks every host over time |
 | `checklist lint` | Validate `controls.yaml`, the scripts' output contract and the README tables |
@@ -49,6 +49,7 @@ sudo ./checklist/checklist run --only linux.ssh,linux.auth --no-collectors
 | `-c, --config` | | Saved device configuration to audit. Network platforms only. |
 | `-o, --output` | `-` (stdout) | Where to write the JSON report. |
 | `--html` | | Also write an HTML report to this path. |
+| `--sarif` / `--junit` / `--csv` | | Also write SARIF 2.1.0, JUnit XML or CSV (see [Export formats](#export-formats)). |
 | `--only` | all | Comma-separated key prefixes, e.g. `linux.ssh,collect.listening_ports`. |
 | `-j, --jobs` | `4` | Checks run in parallel. |
 | `--timeout` | `2m` | Per-check timeout; a check that runs longer is reported as `error`. |
@@ -104,6 +105,27 @@ directory as working directory. Output is capped at 1 MiB per stream.
   `status`: `ok`, `error` or `skipped`.
 - `score` is `pass / (pass + fail)` as a percentage; errors are excluded.
 - Network reports add `target`: the configuration path, its SHA-256 and the device hostname.
+
+## Export formats
+
+`run` writes any combination of formats in one pass; `report` converts a saved JSON report later
+(`--format`, or inferred from the extension: `.html`, `.sarif`, `.xml`, `.csv`).
+
+| Format | Use | Mapping |
+|---|---|---|
+| HTML | People | Self-contained page with score, filters and details |
+| SARIF 2.1.0 | GitHub code scanning and other SARIF consumers | One rule per control; `fail` is an `error` result, `error` a `warning`, `waived` a suppressed result. Locations point at the check script; a stable fingerprint per platform, host and control deduplicates alerts across runs. |
+| JUnit XML | CI test views (GitLab, Jenkins, Azure DevOps) | One test case per check; `fail` is a failure, `error` an error, `waived` skipped |
+| CSV | Spreadsheets and auditors | One row per check, including waiver fields |
+
+Upload to GitHub code scanning, for example:
+
+```yaml
+- run: sudo ./checklist/checklist run --sarif results.sarif -o report.json
+- uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: results.sarif
+```
 
 ## `checklist diff`
 

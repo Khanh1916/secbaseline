@@ -16,6 +16,11 @@ and its impact.
 You can expect an acknowledgement within 7 days. Once a fix is available, it is released and the
 advisory is published with credit to the reporter unless you prefer otherwise.
 
+## Verifying releases
+
+Release archives and container images are built by GitHub Actions from a tagged commit and carry
+build provenance attestations; see "Verifying downloads" in the README.
+
 ## Scope
 
 In scope:

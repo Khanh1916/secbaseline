@@ -15,6 +15,8 @@ const (
 	StatusError   = "error"
 	StatusOK      = "ok"
 	StatusSkipped = "skipped"
+	// StatusWaived is a failing check covered by an active waiver in the run's policy.
+	StatusWaived = "waived"
 )
 
 type Report struct {
@@ -29,6 +31,15 @@ type Report struct {
 	Summary       Summary           `json:"summary"`
 	Checks        []CheckResult     `json:"checks"`
 	Collectors    []CollectorResult `json:"collectors,omitempty"`
+}
+
+// Subject is what the report is about: the device hostname for network audits,
+// the host name otherwise.
+func (r *Report) Subject() string {
+	if r.Target != nil && r.Target.DeviceHostname != "" {
+		return r.Target.DeviceHostname
+	}
+	return r.Host.Hostname
 }
 
 type Tool struct {
@@ -64,7 +75,9 @@ type Summary struct {
 	Pass  int `json:"pass"`
 	Fail  int `json:"fail"`
 	Error int `json:"error"`
-	// Score is pass / (pass + fail) as a percentage; errors are excluded.
+	// Waived counts failing checks covered by a waiver; like errors they are excluded from the score.
+	Waived int `json:"waived"`
+	// Score is pass / (pass + fail) as a percentage; errors and waived checks are excluded.
 	Score float64 `json:"score"`
 }
 
@@ -81,6 +94,15 @@ type CheckResult struct {
 	Error      string   `json:"error,omitempty"`
 	Output     string   `json:"output,omitempty"`
 	Stderr     string   `json:"stderr,omitempty"`
+	Waiver     *Waiver  `json:"waiver,omitempty"`
+}
+
+// Waiver records the accepted exception that turned a failing check into StatusWaived.
+type Waiver struct {
+	Reason     string `json:"reason"`
+	ApprovedBy string `json:"approved_by,omitempty"`
+	Expires    string `json:"expires,omitempty"`
+	Ticket     string `json:"ticket,omitempty"`
 }
 
 type CollectorResult struct {
@@ -101,6 +123,8 @@ func summarize(checks []CheckResult) Summary {
 			s.Pass++
 		case StatusFail:
 			s.Fail++
+		case StatusWaived:
+			s.Waived++
 		default:
 			s.Error++
 		}

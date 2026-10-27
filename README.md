@@ -29,6 +29,8 @@
   Oracle Linux, Windows, Cisco IOS XE / IOS XR / NX-OS and Juniper Junos.
 - **One self-contained binary**: `checklist` runs the checks in parallel, writes JSON and
   standalone HTML reports, and needs no Python, database or internet access.
+- **Fits into pipelines**: SARIF for code scanning, JUnit XML for CI test views and CSV for
+  spreadsheets, from the same run.
 - **Offline network audits**: checks read a saved running configuration; no device credentials or
   connectivity needed.
 - **Drift detection**: `checklist diff` shows regressions, fixes and new SSH keys, accounts,
@@ -192,6 +194,16 @@ cd .. && ./checklist/checklist lint      # catalog, output contract, README tabl
 
 CI runs the same checks on Linux and Windows. To add or change a control, see
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Verifying downloads
+
+Release archives and the container image carry GitHub build provenance attestations, and every
+release includes an SPDX SBOM and `checksums.txt`:
+
+```bash
+gh attestation verify secbaseline-0.2.0-linux-amd64.tar.gz --repo Khanh1916/secbaseline
+gh attestation verify oci://ghcr.io/khanh1916/secbaseline:latest --repo Khanh1916/secbaseline
+```
 
 ## Known limitations
 

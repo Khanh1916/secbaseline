@@ -166,6 +166,8 @@ var (
 	prefixed    = regexp.MustCompile(`^\s*(?:echo\s+(?:-e\s+)?|Write-Output\s+)"(PASS|FAIL|INFO): `)
 	failedToken = regexp.MustCompile(`\bFAILED\b`)
 	plainVerdct = regexp.MustCompile(`^\s*echo\s+"(PASS|FAIL)[^"]*"`)
+	// Usage and error text on stdout hides the verdict of a network check.
+	strayMsg = regexp.MustCompile(`^\s*echo\s+"(Usage|ERROR|Error|File not found)\b`)
 )
 
 type line struct {
@@ -296,6 +298,9 @@ func (l *linter) networkScript(path string) {
 		}
 		if m := plainVerdct.FindString(c.text); m != "" && !strings.Contains(m, `"PASS"`) && !strings.Contains(m, `"FAIL"`) {
 			l.add(path, c.n, `network verdicts are exactly "PASS" or "FAIL"`)
+		}
+		if strayMsg.MatchString(c.text) && !strings.Contains(c.text, ">&2") {
+			l.add(path, c.n, `print "FAIL" (or write to stderr) instead of a usage or error message`)
 		}
 	}
 }

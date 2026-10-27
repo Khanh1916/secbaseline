@@ -48,6 +48,7 @@ func TestNetworkFixtures(t *testing.T) {
 		parts := strings.Split(filepath.ToSlash(rel), "/") // platform, testdata, id, name
 		platform, id, name := parts[0], parts[2], parts[3]
 		t.Run(platform+"/"+id+"/"+strings.TrimSuffix(name, ".cfg"), func(t *testing.T) {
+			t.Parallel()
 			want, _, _ := strings.Cut(name, "-")
 			if want != StatusPass && want != StatusFail {
 				t.Fatalf("fixture name must start with pass- or fail-")

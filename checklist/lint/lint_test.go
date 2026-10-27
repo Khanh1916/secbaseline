@@ -39,11 +39,13 @@ controls:
   - {key: linux.a.bad, title: Bad, ids: {ubuntu: 2}}
   - {key: linux.a.missing, title: Missing, ids: {ubuntu: 3}}
   - {key: network.n, title: Net, ids: {iosxe: 7}}
+  - {key: network.m, title: Net2, ids: {iosxe: 8}}
 `)
 	write("ubuntu/1.sh", "#!/bin/bash\nif true; then\n  echo \"PASS: fine\"\n  exit 0\nfi\necho \"FAIL: not fine\"\nexit 1\n")
 	write("ubuntu/2.sh", "\n#!/bin/bash\necho \"progress\"\necho \"FAIL: wrong code\"\nexit 0\nexit 2\n")
 	write("ubuntu/9.sh", "#!/bin/bash\necho \"PASS: orphan\"\nexit 0\n")
 	write("iosxe/7.sh", "#!/bin/bash\necho \"FAILED\"\nexit 1\n")
+	write("iosxe/8.sh", "#!/bin/bash\nif [ ! -f \"$1\" ]; then\n  echo \"Usage: $0 <config>\"\n  exit 1\nfi\necho \"Error: x\" >&2\necho \"PASS\"\nexit 0\n")
 
 	cat, err := catalog.Load(root)
 	if err != nil {
@@ -62,13 +64,14 @@ controls:
 		"linux.a.missing: script ubuntu/3.sh not found",
 		"ubuntu/9.sh: script is not listed in controls.yaml",
 		"iosxe/7.sh:2: use FAIL, not FAILED",
+		`iosxe/8.sh:3: print "FAIL" (or write to stderr) instead of a usage or error message`,
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("missing problem %q in:\n%s", want, joined)
 		}
 	}
-	if strings.Contains(joined, "ubuntu/1.sh") {
-		t.Errorf("clean script reported:\n%s", joined)
+	if strings.Contains(joined, "ubuntu/1.sh") || strings.Contains(joined, "iosxe/8.sh:6") {
+		t.Errorf("clean line reported:\n%s", joined)
 	}
 }
 

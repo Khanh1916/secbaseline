@@ -79,6 +79,70 @@ jobs:
           (cd checklist && go build -o "$RUNNER_TEMP/checklist.exe" .)
           "$RUNNER_TEMP/checklist.exe" lint
 
+  distros:
+    name: distro (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu
+            image: ubuntu:24.04
+            install: apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq telnetd
+            control: linux.services.telnet_server_removed
+          - platform: debian
+            image: debian:12
+            install: apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq telnetd
+            control: linux.services.telnet_server_removed
+          - platform: redhat
+            image: registry.access.redhat.com/ubi9/ubi:latest
+            install: dnf -y -q install httpd
+            control: linux.services.http_server_removed
+          - platform: rocky
+            image: rockylinux:9
+            install: dnf -y -q install telnet-server
+            control: linux.services.telnet_server_removed
+          - platform: centos
+            image: quay.io/centos/centos:stream9
+            install: dnf -y -q install telnet-server
+            control: linux.services.telnet_server_removed
+          - platform: oraclelinux
+            image: oraclelinux:9
+            install: dnf -y -q install telnet-server
+            control: linux.services.telnet_server_removed
+          - platform: suse
+            image: opensuse/leap:15.6
+            install: zypper -n -q install telnet-server
+            control: linux.services.telnet_server_removed
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: checklist/go.mod
+          cache-dependency-path: checklist/go.sum
+
+      - name: Build
+        working-directory: checklist
+        run: CGO_ENABLED=0 go build -o /tmp/checklist .
+
+      - name: Every check gives a verdict on ${{ matrix.image }}
+        run: |
+          docker run --rm -v "$PWD:/repo" -v /tmp/checklist:/usr/local/bin/checklist:ro -w /repo ${{ matrix.image }} \
+            checklist run -p ${{ matrix.platform }} --no-collectors --timeout 90s -o /repo/before.json
+          if ! jq -e '.summary.error == 0' before.json >/dev/null; then
+            jq '.checks[] | select(.status == "error") | {id, key, error, output, stderr}' before.json
+            exit 1
+          fi
+          jq -e '.checks[] | select(.key == "${{ matrix.control }}") | .status == "pass"' before.json
+
+      - name: ${{ matrix.control }} fails once the package is installed
+        run: |
+          docker run --rm -v "$PWD:/repo" -v /tmp/checklist:/usr/local/bin/checklist:ro -w /repo ${{ matrix.image }} \
+            bash -c '${{ matrix.install }} >/dev/null && checklist run -p ${{ matrix.platform }} --only ${{ matrix.control }} --no-collectors -o /repo/after.json'
+          jq '.checks[0] | {id, status, message}' after.json
+          jq -e '.checks[0].status == "fail"' after.json
+
   docker:
     runs-on: ubuntu-latest
     steps:

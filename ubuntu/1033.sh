@@ -1,16 +1,19 @@
 #!/bin/bash
-if ! systemctl list-unit-files | grep -q "^ntp.service"; then
-	echo "FAIL: Unit ntp.service could not be found"
-	exit 1
-fi
-is_active=$(systemctl is-active ntp 2>/dev/null)
-is_enabled=$(systemctl is-enabled ntp 2>/dev/null)
 
-if [ "$is_active" = "active" ] && [ "$is_enabled" = "enabled" ]; then
-	echo "PASS: Service ntp is running and enabled"
-	exit 0
-else
-	echo "FAIL: Service ntp is not running and enabled (active: $is_active, enabled: $is_enabled)"
-	exit 1
-fi
+# Passes when one of these units is enabled (the unit name differs between
+# distributions; aliases report "alias", so the real names are listed).
+UNITS="ntpsec.service ntpd.service ntp.service"
 
+for unit in $UNITS; do
+  state=$(systemctl is-enabled "$unit" 2>/dev/null)
+  echo "INFO: $unit: ${state:-not-found}"
+  case "$state" in
+    enabled | enabled-runtime)
+      echo "PASS: ntp is enabled ($unit)"
+      exit 0
+      ;;
+  esac
+done
+
+echo "FAIL: ntp is not installed or not enabled"
+exit 1

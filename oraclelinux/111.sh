@@ -1,9 +1,15 @@
 #!/bin/bash
 
-if ! findmnt /var &> /dev/null; then
- echo "FAIL: /var partition is not configured"
- exit 1
+# /var must be a mount of its own (a partition, a logical volume or a tmpfs), not
+# a directory on the filesystem above it. findmnt -k reads the kernel's mount
+# table, so only what is mounted now counts, not what /etc/fstab lists.
+info=$(findmnt -kn -o SOURCE,FSTYPE,OPTIONS /var 2>/dev/null)
+
+if [ -z "$info" ]; then
+  echo "FAIL: /var is not a separate mount"
+  exit 1
 fi
 
-echo "PASS: /var partition is configured"
+echo "$info" | sed 's|^|INFO: /var: |'
+echo "PASS: /var is a separate mount"
 exit 0

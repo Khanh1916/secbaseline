@@ -1,15 +1,26 @@
 #!/bin/bash
-output=$(dpkg -s avahi-daemon 2>&1)
 
-if echo "$output" | grep -q "is not installed and no information is available"; then
-	echo "PASS: Package avahi-daemon is not installed"
-	exit 0
+# Fails when any of these units is enabled or running: a socket or path unit
+# starts the service on demand even when the service itself is disabled.
+# Missing, disabled and masked units pass.
+UNITS="avahi-daemon.service avahi-daemon.socket"
+
+bad=""
+for unit in $UNITS; do
+  state=$(systemctl is-enabled "$unit" 2>/dev/null)
+  echo "INFO: $unit: ${state:-not-found}"
+  case "$state" in
+    enabled | enabled-runtime) bad="$bad $unit" ;;
+  esac
+  if systemctl is-active --quiet "$unit" 2>/dev/null; then
+    bad="$bad $unit(active)"
+  fi
+done
+
+if [ -n "$bad" ]; then
+  echo "FAIL: The Avahi server is enabled:$bad"
+  exit 1
 fi
 
-if echo "$output" | grep -q "Status: install ok installed"; then
-	echo "FAIL: Package avahi-daemon is installed"
-	exit 1
-fi
-
-echo "FAIL: Could not determine the status of package avahi-daemon"
-exit 1
+echo "PASS: The Avahi server is not enabled"
+exit 0

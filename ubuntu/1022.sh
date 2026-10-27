@@ -1,17 +1,25 @@
 #!/bin/bash
-output=$(dpkg -s prelink 2>&1)
 
-if echo "$output" | grep -q "is not installed and no information is available"; then
-	echo "PASS: Package prelink is not installed"
-	exit 0
+PACKAGES="prelink"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: prelink is installed:$found"
+  exit 1
 fi
 
-if echo "$output" | grep -q "Status: install ok installed"; then
-	echo "FAIL: Package prelink is installed"
-	exit 1
-fi
-
-[ -n "$output" ] && echo "$output" | sed 's/^/INFO: /'
-echo "FAIL: Could not determine the status of package prelink"
-exit 1
-
+echo "PASS: prelink is not installed (checked: $PACKAGES)"
+exit 0

@@ -1,14 +1,25 @@
 #!/bin/bash
-vsftpd_status=$(dpkg -s vsftpd 2>&1)
-proftpd_status=$(dpkg -s proftpd-basic 2>&1)
-pureftpd_status=$(dpkg -s pure-ftpd 2>&1)
 
-if echo "$vsftpd_status" | grep -q "Status: install ok installed" || \
-	echo "$proftpd_status" | grep -q "Status: install ok installed" || \
-	echo "$pureftpd_status" | grep -q "Status: install ok installed"; then
-	echo "FAIL: An FTP server package is installed"
-	exit 1
-else
-	echo "PASS: No common FTP server package is installed"
-	exit 0
+PACKAGES="vsftpd proftpd-basic proftpd-core pure-ftpd"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: An FTP server is installed:$found"
+  exit 1
 fi
+
+echo "PASS: No FTP server is installed (checked: $PACKAGES)"
+exit 0

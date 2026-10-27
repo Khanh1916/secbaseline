@@ -118,7 +118,7 @@ sudo bash suse/200.sh; echo "exit=$?"
 | [282](282.sh) | Ensure password quality requirements are configured | `linux.auth.pwquality` |
 | [283](283.sh) | Ensure lockout after failed password attempts is configured | `linux.auth.lockout_deny` |
 | [284](284.sh) | Ensure password reuse is limited | `linux.auth.password_reuse` |
-| [285](285.sh) | Ensure the password hashing algorithm is SHA-512 | `linux.auth.password_hash_sha512` |
+| [285](285.sh) | Ensure the password hashing algorithm is SHA-512 or yescrypt | `linux.auth.password_hash_sha512` |
 | [286](286.sh) | Ensure password expiration is 90 days or less | `linux.auth.pass_max_days` |
 | [287](287.sh) | Ensure user password expiration is set | `linux.auth.password_expiry_set` |
 | [288](288.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |

@@ -1,9 +1,26 @@
 #!/bin/bash
 
-if systemctl is-enabled cups &> /dev/null; then
-  echo "FAIL: cups is enabled"
+# Fails when any of these units is enabled or running: a socket or path unit
+# starts the service on demand even when the service itself is disabled.
+# Missing, disabled and masked units pass.
+UNITS="cups.service cups.socket cups.path"
+
+bad=""
+for unit in $UNITS; do
+  state=$(systemctl is-enabled "$unit" 2>/dev/null)
+  echo "INFO: $unit: ${state:-not-found}"
+  case "$state" in
+    enabled | enabled-runtime) bad="$bad $unit" ;;
+  esac
+  if systemctl is-active --quiet "$unit" 2>/dev/null; then
+    bad="$bad $unit(active)"
+  fi
+done
+
+if [ -n "$bad" ]; then
+  echo "FAIL: CUPS is enabled:$bad"
   exit 1
 fi
 
-echo "PASS: cups is not enabled"
+echo "PASS: CUPS is not enabled"
 exit 0

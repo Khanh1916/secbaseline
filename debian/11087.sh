@@ -1,18 +1,23 @@
 #!/bin/bash
 
-users=$(grep -E "^\w+:[^!*]" /etc/shadow 2>/dev/null | cut -d: -f1)
+# Every account with a password must have to change it within 90 days: its
+# maximum password age (field 5 of /etc/shadow) is between 1 and 90. Accounts
+# without a usable password hash (locked, or key-only) are not checked.
+MAX_DAYS=90
 
-if [ -z "$users" ]; then
-  echo "FAIL: No users with passwords found"
+if [ ! -r /etc/shadow ]; then
+  echo "FAIL: Cannot read /etc/shadow (run as root)"
   exit 1
 fi
 
-for user in $users; do
-  if sudo chage -l "$user" 2>/dev/null | grep -E "^Password expires\s*:.*never$" &>/dev/null; then
-    echo "FAIL: User $user has Password expires set to 'never'"
-    exit 1
-  fi
-done
+bad=$(awk -F: -v max="$MAX_DAYS" '$2 ~ /^\$/ && ($5 !~ /^[0-9]+$/ || $5 + 0 < 1 || $5 + 0 > max) {print $1 " max=" ($5 == "" ? "unset" : $5)}' /etc/shadow)
+users=$(awk -F: '$2 ~ /^\$/' /etc/shadow | wc -l)
 
-echo "PASS: All users have Password expires set to a specific date"
+if [ -n "$bad" ]; then
+  echo "$bad" | sed 's/^/INFO: /'
+  echo "FAIL: Accounts with a password must expire within $MAX_DAYS days"
+  exit 1
+fi
+
+echo "PASS: All $users accounts with a password expire within $MAX_DAYS days"
 exit 0

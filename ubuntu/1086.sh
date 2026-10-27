@@ -1,11 +1,15 @@
 #!/bin/bash
 
-if grep "^PASS_" /etc/login.defs 2>/dev/null | grep -E "^PASS_(MAX_DAYS|MIN_DAYS|WARN_AGE)" &>/dev/null; then
- if grep "^PASS_MAX_DAYS" /etc/login.defs &>/dev/null && \ grep "^PASS_MIN_DAYS" /etc/login.defs &>/dev/null && \ grep "^PASS_WARN_AGE" /etc/login.defs &>/dev/null; then
-  echo "PASS: File /etc/login.defs include PASS_MAX_DAYS, PASS_MIN_DAYS, PASS_WARN_AGE with appropiate argument"
-  exit 0
- fi
+# PASS_MAX_DAYS in /etc/login.defs, the maximum password age of new accounts,
+# must be between 1 and 90 days.
+MAX_DAYS=90
+
+value=$(awk '$1 == "PASS_MAX_DAYS" {v = $2} END {print v}' /etc/login.defs 2>/dev/null)
+
+if ! [[ "$value" =~ ^[0-9]+$ ]] || [ "$value" -lt 1 ] || [ "$value" -gt "$MAX_DAYS" ]; then
+  echo "FAIL: PASS_MAX_DAYS must be between 1 and $MAX_DAYS, found ${value:-unset}"
+  exit 1
 fi
 
-echo "FAIL: File /etc/login.defs does not include PASS_MAX_DAYS, PASS_MIN_DAYS, PASS_WARN_AGE"
-exit 1
+echo "PASS: PASS_MAX_DAYS is $value (at most $MAX_DAYS)"
+exit 0

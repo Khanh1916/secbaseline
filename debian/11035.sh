@@ -1,19 +1,25 @@
 #!/bin/bash
-xserver_output=$(dpkg -s xserver-common 2>&1)
-xorg_output=$(dpkg -s xorg 2>&1)
 
-is_not_installed() {
-	echo "$1" | grep -q "is not installed and no information is available"
+PACKAGES="xserver-common xserver-xorg-core xorg"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
 }
 
-is_installed() {
-	echo "$1" | grep -q "Status: install ok installed"
-}
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
 
-if is_not_installed "$xserver_output" && is_not_installed "$xorg_output"; then
-	echo "PASS: Packages xserver-common and xorg are not installed"
-	exit 0
-else
-	echo "FAIL: Package xserver-common or xorg is installed"
-	exit 1
+if [ -n "$found" ]; then
+  echo "FAIL: An X Window System server is installed:$found"
+  exit 1
 fi
+
+echo "PASS: No X Window System server is installed (checked: $PACKAGES)"
+exit 0

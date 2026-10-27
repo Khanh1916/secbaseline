@@ -118,7 +118,7 @@ sudo bash redhat/2001.sh; echo "exit=$?"
 | [2083](2083.sh) | Ensure password quality requirements are configured | `linux.auth.pwquality` |
 | [2084](2084.sh) | Ensure lockout after failed password attempts is configured | `linux.auth.lockout_deny` |
 | [2085](2085.sh) | Ensure password reuse is limited | `linux.auth.password_reuse` |
-| [2086](2086.sh) | Ensure the password hashing algorithm is SHA-512 | `linux.auth.password_hash_sha512` |
+| [2086](2086.sh) | Ensure the password hashing algorithm is SHA-512 or yescrypt | `linux.auth.password_hash_sha512` |
 | [2087](2087.sh) | Ensure password expiration is 90 days or less | `linux.auth.pass_max_days` |
 | [2088](2088.sh) | Ensure user password expiration is set | `linux.auth.password_expiry_set` |
 | [2089](2089.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |

@@ -1,11 +1,25 @@
 #!/bin/bash
-samba_status=$(dpkg -s samba 2>&1)
 
-if echo "$samba_status" | grep -q "Status: install ok installed"; then
-	echo "FAIL: Package samba is installed"
-	exit 1
-else
-	echo "PASS: Package samba is not installed"
-	exit 0
+PACKAGES="samba"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: Samba is installed:$found"
+  exit 1
 fi
 
+echo "PASS: Samba is not installed (checked: $PACKAGES)"
+exit 0

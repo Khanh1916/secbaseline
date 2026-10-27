@@ -1,22 +1,25 @@
 #!/bin/bash
 
-# Check if ldap-utils package is installed
-if dpkg -s ldap-utils 2>/dev/null | grep -q "Status: install ok installed" ; then
-  echo "FAIL: ldap-utils package is installed"
+PACKAGES="ldap-utils libnss-ldap libpam-ldap libnss-ldapd libpam-ldapd"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: An LDAP client is installed:$found"
   exit 1
 fi
 
-# Check if libnss-ldap package is installed
-if dpkg -s libnss-ldap 2>/dev/null | grep -q "Status: install ok installed"; then
-  echo "FAIL: libnss-ldap package is installed"
-  exit 1
-fi
-
-# Check if libpam-ldap package is installed
-if dpkg -s libpam-ldap 2>/dev/null | grep -q "Status: install ok installed"; then
-  echo "FAIL: libpam-ldap package is installed"
-  exit 1
-fi
-
-echo "PASS: LDAP client packages are not present"
+echo "PASS: No LDAP client is installed (checked: $PACKAGES)"
 exit 0

@@ -1,14 +1,25 @@
 #!/bin/bash
 
-if dpkg -s rsh-client 2>/dev/null | grep -q "Status: install ok installed"; then
- echo "FAIL: rsh-client package is installed"
- exit 1
+PACKAGES="rsh-client rsh-server rsh-redone-client rsh-redone-server"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: An rsh client or server is installed:$found"
+  exit 1
 fi
 
-if dpkg -s rsh-server 2>/dev/null | grep -q "Status: install ok installed"; then
- echo "FAIL: rsh-server package is installed"
- exit 1
-fi
-
-echo "PASS: rsh packages are not present"
+echo "PASS: No rsh client or server is installed (checked: $PACKAGES)"
 exit 0

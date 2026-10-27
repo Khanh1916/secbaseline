@@ -117,7 +117,7 @@ sudo bash rocky/3001.sh; echo "exit=$?"
 | [3083](3083.sh) | Ensure password quality requirements are configured | `linux.auth.pwquality` |
 | [3084](3084.sh) | Ensure lockout after failed password attempts is configured | `linux.auth.lockout_deny` |
 | [3085](3085.sh) | Ensure password reuse is limited | `linux.auth.password_reuse` |
-| [3086](3086.sh) | Ensure the password hashing algorithm is SHA-512 | `linux.auth.password_hash_sha512` |
+| [3086](3086.sh) | Ensure the password hashing algorithm is SHA-512 or yescrypt | `linux.auth.password_hash_sha512` |
 | [3087](3087.sh) | Ensure password expiration is 90 days or less | `linux.auth.pass_max_days` |
 | [3088](3088.sh) | Ensure user password expiration is set | `linux.auth.password_expiry_set` |
 | [3089](3089.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |

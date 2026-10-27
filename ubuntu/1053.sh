@@ -1,12 +1,23 @@
 #!/bin/bash
 
-if [ "$(sysctl -n net.ipv4.ip_forward)" != "0" ]; then
-  echo "FAIL: IPv4 IP forwarding is enabled"
-  exit 1
-fi
+# Reads the running values. IPv6 keys are skipped when the kernel runs
+# without IPv6 (ipv6.disable=1), which leaves nothing to configure.
+SETTINGS="net.ipv4.ip_forward=0 net.ipv6.conf.all.forwarding=0"
 
-if [ "$(sysctl -n net.ipv6.conf.all.forwarding)" != "0" ]; then
-  echo "FAIL: IPv6 IP forwarding is enabled"
+bad=""
+for setting in $SETTINGS; do
+  key=${setting%%=*}
+  want=${setting#*=}
+  case "$key" in
+    net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || continue ;;
+  esac
+  value=$(sysctl -n "$key" 2>/dev/null)
+  echo "INFO: $key = ${value:-unreadable} (want $want)"
+  [ "$value" = "$want" ] || bad="$bad $key"
+done
+
+if [ -n "$bad" ]; then
+  echo "FAIL: IP forwarding must be disabled; wrong:$bad"
   exit 1
 fi
 

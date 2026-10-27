@@ -1,16 +1,25 @@
 #!/bin/bash
-check_output=$(dpkg -s aide 2>&1)
 
-if echo "$check_output" | grep -q "Status: install ok installed"; then
-	echo "PASS: Package aide is installed"
-	exit 0
-else
-	if echo "$check_output" | grep -q "is not installed and no information is available"; then
-	echo "FAIL: Package aide is not installed"
-	exit 1
-	else
-		[ -n "$check_output" ] && echo "$check_output" | sed 's/^/INFO: /'
-		echo "FAIL: Could not determine the status of package aide"
-		exit 1
-	fi
+PACKAGES="aide"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+missing=""
+for p in $PACKAGES; do
+  installed "$p" || missing="$missing $p"
+done
+
+if [ -n "$missing" ]; then
+  echo "FAIL: AIDE is not installed; missing:$missing"
+  exit 1
 fi
+
+echo "PASS: AIDE is installed ($PACKAGES)"
+exit 0

@@ -119,7 +119,7 @@ sudo bash oraclelinux/100.sh; echo "exit=$?"
 | [182](182.sh) | Ensure password quality requirements are configured | `linux.auth.pwquality` |
 | [183](183.sh) | Ensure lockout after failed password attempts is configured | `linux.auth.lockout_deny` |
 | [184](184.sh) | Ensure password reuse is limited | `linux.auth.password_reuse` |
-| [185](185.sh) | Ensure the password hashing algorithm is SHA-512 | `linux.auth.password_hash_sha512` |
+| [185](185.sh) | Ensure the password hashing algorithm is SHA-512 or yescrypt | `linux.auth.password_hash_sha512` |
 | [186](186.sh) | Ensure password expiration is 90 days or less | `linux.auth.pass_max_days` |
 | [187](187.sh) | Ensure user password expiration is set | `linux.auth.password_expiry_set` |
 | [188](188.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |

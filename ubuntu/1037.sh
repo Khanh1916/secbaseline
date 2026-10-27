@@ -1,15 +1,26 @@
 #!/bin/bash
-output=$(dpkg -s cups 2>&1)
 
-if echo "$output" | grep -q "is not installed and no information is available"; then
-	echo "PASS: Package cups is not installed"
-	exit 0
+# Fails when any of these units is enabled or running: a socket or path unit
+# starts the service on demand even when the service itself is disabled.
+# Missing, disabled and masked units pass.
+UNITS="cups.service cups.socket cups.path"
+
+bad=""
+for unit in $UNITS; do
+  state=$(systemctl is-enabled "$unit" 2>/dev/null)
+  echo "INFO: $unit: ${state:-not-found}"
+  case "$state" in
+    enabled | enabled-runtime) bad="$bad $unit" ;;
+  esac
+  if systemctl is-active --quiet "$unit" 2>/dev/null; then
+    bad="$bad $unit(active)"
+  fi
+done
+
+if [ -n "$bad" ]; then
+  echo "FAIL: CUPS is enabled:$bad"
+  exit 1
 fi
 
-if echo "$output" | grep -q "Status: install ok installed"; then
-	echo "FAIL: Package cups is installed"
-	exit 1
-fi
-
-echo "FAIL: Could not determine the status of package cups"
-exit 1
+echo "PASS: CUPS is not enabled"
+exit 0

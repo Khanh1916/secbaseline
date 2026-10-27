@@ -54,7 +54,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -62,12 +62,12 @@ CONFIG_FILE="$1"
 
 # Check file exists and is readable
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "ERROR: File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
 if [ ! -r "$CONFIG_FILE" ]; then
-    echo "ERROR: Cannot read file: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -140,7 +140,7 @@ check_snmp_acl() {
             
             # Extract and validate ACL content
             local acl_content=$(sed -n "/^[[:space:]]*ipv4[[:space:]]\+access-list[[:space:]]\+$acl_name[[:space:]]*$/,/^![[:space:]]*$/p" "$CONFIG_FILE" | \
-                               head -n -1 | tail -n +2)
+                               sed '$d' | tail -n +2)
             
             if [ -z "$acl_content" ]; then
                 return 1

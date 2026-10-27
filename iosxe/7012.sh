@@ -84,22 +84,22 @@ fi
 has_error=0
 
 # Check for enable secret configuration (required)
-if ! grep -Ei '^\s*enable secret' "$config_file" >/dev/null; then
+if ! grep -Ei '^[[:space:]]*enable secret' "$config_file" >/dev/null; then
   has_error=1
 fi
 
 # Check for service password-encryption (required)
-if ! grep -Ei '^\s*service password-encryption' "$config_file" >/dev/null; then
+if ! grep -Ei '^[[:space:]]*service password-encryption' "$config_file" >/dev/null; then
   has_error=1
 fi
 
 # Check for at least one username with secret (required)
-if ! grep -Ei '^\s*username.*secret' "$config_file" >/dev/null; then
+if ! grep -Ei '^[[:space:]]*username.*secret' "$config_file" >/dev/null; then
   has_error=1
 fi
 
 # Check that no username uses password instead of secret (prohibited)
-if grep -Ei '^\s*username.*password' "$config_file" >/dev/null; then
+if grep -Ei '^[[:space:]]*username.*password' "$config_file" >/dev/null; then
   has_error=1
 fi
 

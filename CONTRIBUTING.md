@@ -78,12 +78,17 @@ PASS: Account lockout deny is between 1 and 5 on every pam_faillock/pam_tally2 a
   `echo "$x" | sed 's/^/INFO: /'` before the verdict.
 
 Network checks take the configuration file as their only argument, print exactly `PASS` or `FAIL`
-and exit `0` or `1`. An empty or comment-only configuration must fail.
+and exit `0` or `1`. An empty or comment-only configuration must fail, and so must a missing
+argument or file: print `FAIL`, not a usage or error message (`lint` rejects those).
 
 ## Conventions
 
 - English, ASCII only, `#!/bin/bash` on line 1, LF line endings (`.gitattributes` enforces them).
 - Exit codes are only `0` and `1`.
+- Portable tools only: awk scripts must run under mawk, the default awk on Debian and Ubuntu and
+  in the container image, so no `\s`, `\S`, `\b`, three-argument `match()` or `IGNORECASE`; use
+  `[[:space:]]` or `[ \t]` and fields. Avoid `grep -P` and `head -n -1`. CI runs the network
+  fixtures with mawk.
 - Script IDs are identities in downstream systems: never renumber, add new IDs instead.
 - Organization-specific values (servers, time zones) are read from `CHECKLIST_*` environment
   variables with a default, not hard-coded.

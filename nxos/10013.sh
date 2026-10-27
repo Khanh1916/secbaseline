@@ -39,7 +39,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -47,7 +47,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -109,6 +109,8 @@ is_allowed_siem_server() {
     local ip_port="$1"
     
     for allowed in "${ALLOWED_SIEM_SERVERS[@]}"; do
+        # An entry without a port (e.g. from CHECKLIST_SIEM_SERVERS) means 514
+        case "$allowed" in *:*) ;; *) allowed="${allowed}:514" ;; esac
         if [ "$ip_port" = "$allowed" ]; then
             return 0  # Found in allowed list
         fi

@@ -1,51 +1,43 @@
 #!/bin/bash
 
 # DESCRIPTION:
-# This script validates network device configuration by checking login announcement settings
-# following security compliance requirements for proper user notification
+# This script validates that a login banner (the warning shown before the
+# login prompt) is configured, as "banner login" on IOS XE and IOS XR and
+# "banner motd" on NX-OS
 #
 # VALIDATION LOGIC:
 # 1. Check if configuration file exists and is accessible
-# 2. Search for system login announcement configuration directive
-# 3. Validate that announcement message is properly configured
-# 4. Ensure compliance with security banner requirements
-#
-# STRICT VALIDATION REQUIREMENTS:
-# - Configuration file must exist and be readable
-# - Must contain "set system login announcement" directive
-# - Announcement message can be quoted string or unquoted text
-# - Banner message must be explicitly configured for security compliance
+# 2. "set system login message <text>" must be present: Junos shows it before
+#    the login prompt. "set system login announcement" is shown only after a
+#    successful login, so it does not count as the login banner
+# 3. A deactivated message ("deactivate system login message", or a
+#    deactivated parent) does not count
 #
 # SAMPLE CONFIGURATION:
-# set system login announcement "Unauthorized access prohibited"
+# set system login message "Authorized access only. Activity is monitored."
 #
 # USAGE:
 # ./8002.sh <config_file>
 #
 # EXIT CODES:
-# 0 - PASS: Login announcement is properly configured
-# 1 - FAIL: Login announcement is missing or not configured
-
-# Check arguments
-if [ $# -ne 1 ]; then
-    echo "FAIL"
-    exit 1
-fi
+# 0 - PASS: Login message is configured
+# 1 - FAIL: Login message is missing or deactivated
 
 CONFIG_FILE="$1"
-
-# Check file exists
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "FAIL"
-    exit 1
+if [ -z "$CONFIG_FILE" ] || [ ! -f "$CONFIG_FILE" ]; then
+  echo "FAIL"
+  exit 1
 fi
 
-# Search for system login announcement configuration
-# Matches: set system login announcement "quoted message" or set system login announcement unquoted-text
-if grep -Eq 'set[[:space:]]+system[[:space:]]+login[[:space:]]+announcement[[:space:]]+("[^"]+"|\S+)' "$CONFIG_FILE"; then
-    echo "PASS"
-    exit 0
-else
-    echo "FAIL"
-    exit 1
+if awk '
+  { sub(/[ \t\r]+$/, "") }
+  /^set system login message [^ ]/ { message = 1 }
+  /^deactivate (system|system login|system login message)$/ { deactivated = 1 }
+  END { exit ((message && !deactivated) ? 0 : 1) }
+' "$CONFIG_FILE"; then
+  echo "PASS"
+  exit 0
 fi
+
+echo "FAIL"
+exit 1

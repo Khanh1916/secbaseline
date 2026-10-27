@@ -64,13 +64,14 @@ fi
 
 # Check arguments
 if [ $# -ne 1 ] || [ ! -r "$1" ]; then
-    echo "Usage: $0 <readable-junos-config>" >&2
+    echo "FAIL" >&2
     echo "FAIL"
     exit 1
 fi
 
 CONFIG_FILE="$1"
-LEVELS="info|notice|warning|error|critical|alert|emergency"
+# "any" (every level) and "debug" include info and above as well
+LEVELS="any|debug|info|notice|warning|error|critical|alert|emergency"
 
 # Function to check logging configuration to SIEM servers (Junos set format:
 #   set system syslog host <ip> any <level>

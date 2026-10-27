@@ -137,8 +137,9 @@ check_user_passwords() {
     fi
     
     # Check each user has encrypted password
+    # A hashed password or an SSH key; a key-only account has no password.
     for user in $users; do
-        if ! grep -E "set system login user $user authentication encrypted-password" "$CONFIG_FILE" >/dev/null 2>&1; then
+        if ! grep -E "set system login user $user authentication (encrypted-password|ssh-(rsa|ecdsa|ed25519)) " "$CONFIG_FILE" >/dev/null 2>&1; then
             return 1
         fi
     done

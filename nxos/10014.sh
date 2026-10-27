@@ -31,7 +31,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -39,14 +39,16 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
 # Function to check AAA authentication rejected configuration
 check_aaa_auth_rejected() {
     # Check for "aaa authentication rejected" configuration
-    if grep -qi "^aaa[[:space:]]\+authentication[[:space:]]\+rejected[[:space:]]\+" "$CONFIG_FILE"; then
+    # ...or login quiet mode: "login block-for <s> attempts <n> within <s>"
+    if grep -qi "^aaa[[:space:]]\+authentication[[:space:]]\+rejected[[:space:]]\+" "$CONFIG_FILE" || \
+       grep -qi "^login[[:space:]]\+block-for[[:space:]]\+[0-9]\+[[:space:]]\+attempts[[:space:]]\+" "$CONFIG_FILE"; then
         echo "AAA_AUTH_REJECTED_CONFIGURED"
     else
         echo "AAA_AUTH_REJECTED_NOT_CONFIGURED"

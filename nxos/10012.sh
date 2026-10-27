@@ -5,7 +5,7 @@
 # strong password policy configuration is enabled.
 #
 # VALIDATION CRITERIA:
-# - All usernames must have password configured (not "password 5 !")
+# - All usernames must have a hashed password, type 5 or 8 (not "password 5 !")
 # - Password strength check must be enabled (not "no password strength-check")
 # - Minimum password length must be 10+ characters ("userpassphrase min-length 10")
 # - Returns PASS only if all criteria are met
@@ -36,7 +36,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -44,7 +44,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -66,8 +66,9 @@ check_user_passwords() {
             return
         fi
         
-        # Check if line contains password hash
-        if ! echo "$line" | grep -qi "password[[:space:]]\+5[[:space:]]\+\$[^[:space:]]\+"; then
+        # Check if line contains a password hash: type 5 (SHA-256 crypt) or
+        # type 8 (PBKDF2, newer NX-OS releases)
+        if ! echo "$line" | grep -qi "password[[:space:]]\+[58][[:space:]]\+\$[^[:space:]]\+"; then
             echo "USER_WITHOUT_PASSWORD"
             return
         fi

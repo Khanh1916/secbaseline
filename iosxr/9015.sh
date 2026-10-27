@@ -36,7 +36,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -44,12 +44,12 @@ CONFIG_FILE="$1"
 
 # Check file exists and is readable
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "ERROR: File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
 if [ ! -r "$CONFIG_FILE" ]; then
-    echo "ERROR: Cannot read file: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 

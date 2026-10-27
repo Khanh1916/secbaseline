@@ -29,6 +29,15 @@ jobs:
           go vet ./...
           go test ./...
 
+      # mawk is the default awk on Debian and Ubuntu, and in the container image;
+      # gawk-only syntax (\s, three-argument match()) silently breaks checks there.
+      - name: Network fixtures with mawk
+        working-directory: checklist
+        run: |
+          sudo apt-get install -y -qq mawk >/dev/null
+          mkdir -p "$RUNNER_TEMP/mawk" && ln -sf "$(command -v mawk)" "$RUNNER_TEMP/mawk/awk"
+          PATH="$RUNNER_TEMP/mawk:$PATH" go test -count=1 ./runner -run TestNetworkFixtures
+
       - name: Cross-compile
         working-directory: checklist
         run: |

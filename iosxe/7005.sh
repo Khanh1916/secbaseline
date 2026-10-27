@@ -22,14 +22,17 @@
 #    - service tcp-small-servers    : Legacy TCP echo/discard services (security risk)
 #    - service udp-small-servers    : Legacy UDP echo/discard services (security risk)
 #    - ip finger                    : Finger protocol (information disclosure)
-#    - ip bootp server             : BOOTP server (legacy, insecure)
 #    - service config              : Auto-configuration service (security risk)
-#    - service dhcp                : DHCP service (potential attack vector)
 #
 # 2. Required Security Settings (Must be present):
 #    - ip dhcp bootp ignore        : Disable BOOTP requests processing
+#    - no ip bootp server          : BOOTP server (legacy, insecure)
+#    - no service dhcp             : DHCP service (potential attack vector)
 #    - no ip http server           : Disable HTTP web server
 #    - no ip http secure-server    : Disable HTTPS web server
+#    The BOOTP server and the DHCP service are on by default, and the
+#    running configuration shows only the "no" form, so their absence from it
+#    means they are enabled
 #
 # Compliance Standards:
 # - Follows Cisco IOS-XE security hardening guidelines
@@ -60,11 +63,9 @@ for forbidden in \
   "service tcp-small-servers" \
   "service udp-small-servers" \
   "ip finger" \
-  "ip bootp server" \
-  "service config" \
-  "service dhcp"
+  "service config"
 do
-  if grep -qE "^$forbidden(\s|$)" "$config_file"; then
+  if grep -qE "^$forbidden([[:space:]]|$)" "$config_file"; then
     has_error=1
   fi
 done
@@ -72,10 +73,12 @@ done
 # Required security settings that must be present
 for required in \
   "ip dhcp bootp ignore" \
+  "no ip bootp server" \
+  "no service dhcp" \
   "no ip http server" \
   "no ip http secure-server"
 do
-  if ! grep -qE "^$required(\s|$)" "$config_file"; then
+  if ! grep -qE "^$required([[:space:]]|$)" "$config_file"; then
     has_error=1
   fi
 done

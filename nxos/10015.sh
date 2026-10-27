@@ -38,7 +38,7 @@
 
 # Check arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <config_file>"
+    echo "FAIL"
     exit 1
 fi
 
@@ -46,7 +46,7 @@ CONFIG_FILE="$1"
 
 # Check file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "File not found: $CONFIG_FILE"
+    echo "FAIL"
     exit 1
 fi
 
@@ -90,8 +90,8 @@ check_scheduler_jobs() {
         in_job_block = 0
     }
     
-    # Check for copy running-config in job block
-    in_job_block && /^[[:space:]]+copy[[:space:]]+running-config[[:space:]]+(tftp|ftp|http|https|scp|sftp|usb)/ {
+    # Check for copy running-config in job block (indented or not)
+    in_job_block && /^[[:space:]]*copy[[:space:]]+running-config[[:space:]]+(tftp|ftp|http|https|scp|sftp|usb)/ {
         has_copy_command = 1
     }
     

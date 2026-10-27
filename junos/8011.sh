@@ -15,7 +15,7 @@
 #
 # STRICT VALIDATION REQUIREMENTS:
 # - Secure remote access protocol SSH version 2 with connection limits, user restrictions, and strong encryption
-# - All user accounts must have encrypted passwords
+# - All user accounts must have encrypted passwords or SSH keys (key-only accounts pass)
 # - Root account must have strong password protection
 # - Minimum password length of 10 characters required
 # - Password requirements: uppercase, lowercase, numbers, special characters
@@ -31,7 +31,7 @@
 # 6. Strong ciphers only (3DES or AES variants)
 #
 # PASSWORD SECURITY REQUIREMENTS:
-# 1. All user accounts must have encrypted passwords
+# 1. All user accounts must have encrypted passwords or SSH keys
 # 2. Root authentication must be configured with encrypted password
 # 3. Password format must use strong hashing (sha512/sha256/sha1)
 # 4. Password complexity policy enforced (minimum 10 characters)
@@ -161,8 +161,10 @@ check_password_security() {
     
     # 5. Check all users have encrypted passwords
     local users=$(grep -E "set system login user" "$CONFIG_FILE" | awk '{print $5}' | sort -u)
+    # Every user authenticates with a hashed password or an SSH key; a
+    # key-only account has no password to guess.
     for user in $users; do
-        if ! grep -E "set system login user $user authentication encrypted-password" "$CONFIG_FILE" >/dev/null 2>&1; then
+        if ! grep -E "set system login user $user authentication (encrypted-password|ssh-(rsa|ecdsa|ed25519)) " "$CONFIG_FILE" >/dev/null 2>&1; then
             return 1
         fi
     done

@@ -23,9 +23,10 @@
 #      every line authenticates locally or with a line password)
 #
 # 2. Remote Authentication Method Detection:
-#    - Searches for: "aaa authentication login <method> group radius"
-#    - Searches for: "aaa authentication login <method> group tacacs+"
-#    - Extracts authentication method name for VTY validation
+#    - Server groups: the built-in "radius" and "tacacs+", and named groups
+#      defined with "aaa group server radius|tacacs+ <name>"
+#    - A method list is central when its first method is "group <server group>":
+#      "aaa authentication login <list> group <group> [...]"
 #
 # 3. VTY Line Validation:
 #    - All line vty blocks must use: "login authentication <method>"
@@ -71,49 +72,48 @@ if ! grep -qE '^aaa new-model([[:space:]]|$)' "$config_file"; then
   exit 1
 fi
 
-# Find authentication method lists using group radius or tacacs+
-methods=$(grep -E '^aaa authentication login [^ ]+ group (radius|tacacs\+)' "$config_file" | awk '{print $4}' | sort -u | tr '\n' ' ')
+# Read the file twice: server groups and method lists may appear in any order,
+# then every line vty block must use a central method list
+if awk '
+  NR == FNR {
+    if ($0 ~ /^aaa group server (radius|tacacs\+) /) groups[$5] = 1
+    if ($0 ~ /^aaa authentication login /) { first[$4] = $5; group[$4] = $6 }
+    next
+  }
 
-if [ -z "$methods" ]; then
-  echo "FAIL"
-  exit 1
-fi
-
-# Check that every line vty block uses one of those method lists
-if awk -v methods="$methods" '
-  BEGIN {
-    n = split(methods, m, " ");
-    for (i = 1; i <= n; i++) central[m[i]] = 1;
-    in_block = 0; blocks = 0; bad = 0;
+  function central(list,   g) {
+    if (!(list in first) || first[list] != "group") return 0
+    g = group[list]
+    return g == "radius" || g == "tacacs+" || (g in groups)
   }
 
   function close_block() {
-    if (!in_block) return;
-    if (!((list == "" ? "default" : list) in central)) bad++;
-    in_block = 0;
+    if (!in_block) return
+    if (!central(list == "" ? "default" : list)) bad++
+    in_block = 0
   }
 
   /^line vty/ {
-    close_block();
-    in_block = 1;
-    blocks++;
-    list = "";
-    next;
+    close_block()
+    in_block = 1
+    blocks++
+    list = ""
+    next
   }
 
   /^[^ ]/ {
-    close_block();
+    close_block()
   }
 
   in_block && /^ +login authentication / {
-    list = $3;
+    list = $3
   }
 
   END {
-    close_block();
-    exit (blocks == 0 || bad > 0) ? 1 : 0;
+    close_block()
+    exit (blocks == 0 || bad > 0) ? 1 : 0
   }
-' "$config_file"; then
+' "$config_file" "$config_file"; then
   echo "PASS"
   exit 0
 else

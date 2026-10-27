@@ -54,6 +54,8 @@ collectors:
    `./checklist/checklist lint`.
 4. Run the check on a real or virtual host. Network checks can be run against the sample
    configuration in each network directory, and against an empty file (which must fail).
+   For network checks, add cases to `<platform>/testdata/<id>/` as `pass-<case>.cfg` or
+   `fail-<case>.cfg`; `go test ./runner` checks each verdict.
 
 ## Policies
 

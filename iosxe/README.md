@@ -23,6 +23,9 @@ bash iosxe/iosxe_run_all.sh running-config.txt
 
 Sample configurations for testing: [`iosxe.cfg`](iosxe.cfg), [`cat8k.cfg`](cat8k.cfg).
 
+[`testdata/`](testdata) holds small configurations named after the verdict they must produce
+(`<id>/pass-*.cfg`, `<id>/fail-*.cfg`); `go test ./runner` in `checklist/` runs them.
+
 On Windows, run these from Git Bash, or pass `--shell` with the path to a `bash.exe`.
 
 ## Site-specific values
@@ -36,7 +39,8 @@ organization that wrote them; set these environment variables before auditing yo
 | `CHECKLIST_SIEM_SERVERS` | `7013.sh` | at least one configured syslog server; `ip` or `ip:port`, space- or comma-separated, port defaults to 514 | `192.168.89.10:1514`, `192.168.100.104` |
 
 ```bash
-CHECKLIST_SIEM_SERVERS="10.0.0.5:514 10.0.0.6" CHECKLIST_TZ_OFFSET=-5   ./checklist/checklist run --platform iosxe --config running-config.txt
+CHECKLIST_SIEM_SERVERS="10.0.0.5:514 10.0.0.6" CHECKLIST_TZ_OFFSET=-5 \
+  ./checklist/checklist run --platform iosxe --config running-config.txt
 ```
 
 <!-- BEGIN GENERATED: checklist docs -->

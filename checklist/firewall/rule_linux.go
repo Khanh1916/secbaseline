@@ -2,6 +2,7 @@ package firewall
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 )
 
@@ -39,7 +40,13 @@ func GetRules() (string, error) {
 }
 
 func getRule(cmdStr string, table string) (string, error) {
-	cmd := exec.Command("sudo", cmdStr, "-t", table, "-vL", "-n", "--line-numbers")
+	args := []string{cmdStr, "-t", table, "-vL", "-n", "--line-numbers"}
+	// Root runs iptables directly (containers often lack sudo). Anyone else
+	// goes through sudo -n, which fails instead of waiting for a password.
+	if os.Geteuid() != 0 {
+		args = append([]string{"sudo", "-n"}, args...)
+	}
+	cmd := exec.Command(args[0], args[1:]...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to get rule: %w", err)

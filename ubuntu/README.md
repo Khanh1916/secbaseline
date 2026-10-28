@@ -118,7 +118,7 @@ sudo bash ubuntu/1001.sh; echo "exit=$?"
 | [1082](1082.sh) | Ensure password quality requirements are configured | `linux.auth.pwquality` |
 | [1083](1083.sh) | Ensure lockout after failed password attempts is configured | `linux.auth.lockout_deny` |
 | [1084](1084.sh) | Ensure password reuse is limited | `linux.auth.password_reuse` |
-| [1085](1085.sh) | Ensure the password hashing algorithm is SHA-512 | `linux.auth.password_hash_sha512` |
+| [1085](1085.sh) | Ensure the password hashing algorithm is SHA-512 or yescrypt | `linux.auth.password_hash_sha512` |
 | [1086](1086.sh) | Ensure password expiration is 90 days or less | `linux.auth.pass_max_days` |
 | [1087](1087.sh) | Ensure user password expiration is set | `linux.auth.password_expiry_set` |
 | [1088](1088.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |

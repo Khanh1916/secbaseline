@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if rpm -q tcp_wrappers &> /dev/null; then
-  echo "PASS: TCP Wrapper is installed"
+if rpm -q tcpd &> /dev/null; then
+  echo "PASS: TCP Wrappers (tcpd) is installed"
   exit 0
 fi
 
-echo "FAIL: TCP Wrapper is not installed"
+echo "FAIL: TCP Wrappers (tcpd) is not installed"
 exit 1

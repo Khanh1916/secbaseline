@@ -1,12 +1,15 @@
 #!/bin/bash
-output=$(df -h /tmp 2>&1)
-if echo "$output" | grep -q "No such file or directory"; then
-	echo "FAIL: /tmp does not exist or is not a separate mount"
-	exit 1
-elif echo "$output" | grep -q "^/"; then
-	echo "PASS: /tmp is a separate filesystem"
-	exit 0
-else
-	echo "FAIL: /tmp is not a separate filesystem"
-	exit 1
+
+# /tmp must be a mount of its own (a partition, a logical volume or a tmpfs), not
+# a directory on the filesystem above it. findmnt -k reads the kernel's mount
+# table, so only what is mounted now counts, not what /etc/fstab lists.
+info=$(findmnt -kn -o SOURCE,FSTYPE,OPTIONS /tmp 2>/dev/null)
+
+if [ -z "$info" ]; then
+  echo "FAIL: /tmp is not a separate mount"
+  exit 1
 fi
+
+echo "$info" | sed 's|^|INFO: /tmp: |'
+echo "PASS: /tmp is a separate mount"
+exit 0

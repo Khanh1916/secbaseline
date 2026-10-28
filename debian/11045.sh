@@ -1,11 +1,25 @@
 #!/bin/bash
-squid_status=$(dpkg -s squid 2>&1)
 
-if echo "$squid_status" | grep -q "Status: install ok installed"; then
-	echo "FAIL: Package squid is installed"
-	exit 1
-else
-	echo "PASS: Package squid is not installed"
-	exit 0
+PACKAGES="squid"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: An HTTP proxy server is installed:$found"
+  exit 1
 fi
 
+echo "PASS: No HTTP proxy server is installed (checked: $PACKAGES)"
+exit 0

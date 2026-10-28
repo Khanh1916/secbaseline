@@ -1,9 +1,19 @@
 #!/bin/bash
 
-if ! systemctl is-enabled chronyd &> /dev/null; then
-  echo "FAIL: chronyd service is not enabled"
-  exit 1
-fi
+# Passes when one of these units is enabled (the unit name differs between
+# distributions; aliases report "alias", so the real names are listed).
+UNITS="chrony.service chronyd.service"
 
-echo "PASS: chronyd service is enabled"
-exit 0
+for unit in $UNITS; do
+  state=$(systemctl is-enabled "$unit" 2>/dev/null)
+  echo "INFO: $unit: ${state:-not-found}"
+  case "$state" in
+    enabled | enabled-runtime)
+      echo "PASS: chrony is enabled ($unit)"
+      exit 0
+      ;;
+  esac
+done
+
+echo "FAIL: chrony is not installed or not enabled"
+exit 1

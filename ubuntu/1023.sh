@@ -1,16 +1,16 @@
 #!/bin/bash
-if ! command -v sestatus &>/dev/null; then
-	echo "FAIL: Command 'sestatus' not found; SELinux may not be installed"
-	exit 1
+
+# SELinux is installed when its tools are: sestatus (policycoreutils) and
+# getenforce (selinux-utils). Whether it is enabled is checked separately.
+missing=""
+for cmd in sestatus getenforce; do
+  command -v "$cmd" >/dev/null 2>&1 || missing="$missing $cmd"
+done
+
+if [ -n "$missing" ]; then
+  echo "FAIL: SELinux tools are not installed; missing:$missing"
+  exit 1
 fi
 
-selinux_status=$(sestatus 2>/dev/null | grep "SELinux status:")
-
-if echo "$selinux_status" | grep -q "enabled"; then
-	echo "PASS: SELinux is installed and enabled (SELinux status: enabled)"
-	exit 0
-else
-	echo "FAIL: SELinux is installed but disabled (SELinux status: disabled)"
-	exit 1
-fi
-
+echo "PASS: SELinux tools are installed (sestatus, getenforce)"
+exit 0

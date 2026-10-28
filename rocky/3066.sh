@@ -1,18 +1,26 @@
 #!/bin/bash
 
-if [ ! -f /etc/hosts.allow ]; then
-  echo "FAIL: /etc/hosts.allow file does not exist"
+# /etc/hosts.allow must belong to root:root with mode 0644 or stricter.
+FILE=/etc/hosts.allow
+MAX_MODE=0644
+
+if [ ! -e "$FILE" ]; then
+  echo "FAIL: $FILE does not exist"
   exit 1
 fi
 
-stat_output=$(stat /etc/hosts.allow | grep "Access:" | head -1)
+read -r mode owner group < <(stat -Lc '%a %U %G' "$FILE")
+echo "INFO: $FILE: mode $mode, owner $owner:$group"
 
-if echo "$stat_output" | grep -q "Access: (0640/-rw-r-----)"; then
-  echo "PASS: File permissions are 0640"
-  exit 0
+if [ "$owner" != root ] || [ "$group" != root ]; then
+  echo "FAIL: $FILE must belong to root:root, not $owner:$group"
+  exit 1
 fi
 
-echo "FAIL: File permissions are not 0640"
-exit 1
+if [ $((8#$mode & ~8#$MAX_MODE & 8#7777)) -ne 0 ]; then
+  echo "FAIL: $FILE has mode $mode; it must be $MAX_MODE or stricter"
+  exit 1
+fi
 
-
+echo "PASS: $FILE is $mode root:root ($MAX_MODE or stricter)"
+exit 0

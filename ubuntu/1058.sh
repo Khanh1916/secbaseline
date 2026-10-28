@@ -1,15 +1,25 @@
 #!/bin/bash
 
-# sysctl net...martians return "net...martians = 1" not just "1"
-if [ "$(sysctl -n net.ipv4.conf.all.log_martians)" != "1" ]; then
-  echo "FAIL: net.ipv4.conf.all.log_martians is not enabled"
+# Reads the running values. IPv6 keys are skipped when the kernel runs
+# without IPv6 (ipv6.disable=1), which leaves nothing to configure.
+SETTINGS="net.ipv4.conf.all.log_martians=1 net.ipv4.conf.default.log_martians=1"
+
+bad=""
+for setting in $SETTINGS; do
+  key=${setting%%=*}
+  want=${setting#*=}
+  case "$key" in
+    net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || continue ;;
+  esac
+  value=$(sysctl -n "$key" 2>/dev/null)
+  echo "INFO: $key = ${value:-unreadable} (want $want)"
+  [ "$value" = "$want" ] || bad="$bad $key"
+done
+
+if [ -n "$bad" ]; then
+  echo "FAIL: Martian packets must be logged; wrong:$bad"
   exit 1
 fi
 
-if [ "$(sysctl -n net.ipv4.conf.default.log_martians)" != "1" ]; then
-  echo "FAIL: net.ipv4.conf.default.log_martians is not enabled"
-  exit 1
-fi
-
-echo "PASS: Martian packets logging is properly configured"
+echo "PASS: Martian packets is logged"
 exit 0

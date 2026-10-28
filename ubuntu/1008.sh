@@ -1,13 +1,15 @@
 #!/bin/bash
-output=$(df -h /dev/shm 2>&1)
-if echo "$output" | grep -q "No such file or directory"; then
-	echo "FAIL: /dev/shm does not exist or is not configured"
-	exit 1
+
+# /dev/shm must be a mount of its own (a partition, a logical volume or a tmpfs), not
+# a directory on the filesystem above it. findmnt -k reads the kernel's mount
+# table, so only what is mounted now counts, not what /etc/fstab lists.
+info=$(findmnt -kn -o SOURCE,FSTYPE,OPTIONS /dev/shm 2>/dev/null)
+
+if [ -z "$info" ]; then
+  echo "FAIL: /dev/shm is not a separate mount"
+  exit 1
 fi
-if echo "$output" | grep -E "^(/|tmpfs)" > /dev/null; then
-	echo "PASS: /dev/shm is a separate filesystem"
-	exit 0
-else
-	echo "FAIL: /dev/shm is not a separate filesystem"
-	exit 1
-fi
+
+echo "$info" | sed 's|^|INFO: /dev/shm: |'
+echo "PASS: /dev/shm is a separate mount"
+exit 0

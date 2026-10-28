@@ -117,7 +117,7 @@ sudo bash centos/5001.sh; echo "exit=$?"
 | [5083](5083.sh) | Ensure password quality requirements are configured | `linux.auth.pwquality` |
 | [5084](5084.sh) | Ensure lockout after failed password attempts is configured | `linux.auth.lockout_deny` |
 | [5085](5085.sh) | Ensure password reuse is limited | `linux.auth.password_reuse` |
-| [5086](5086.sh) | Ensure the password hashing algorithm is SHA-512 | `linux.auth.password_hash_sha512` |
+| [5086](5086.sh) | Ensure the password hashing algorithm is SHA-512 or yescrypt | `linux.auth.password_hash_sha512` |
 | [5087](5087.sh) | Ensure password expiration is 90 days or less | `linux.auth.pass_max_days` |
 | [5088](5088.sh) | Ensure user password expiration is set | `linux.auth.password_expiry_set` |
 | [5089](5089.sh) | Ensure minimum days between password changes is 1 or more | `linux.auth.pass_min_days` |

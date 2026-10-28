@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# Check /etc/hosts.deny configuration
-if [ ! -f /etc/hosts.deny ]; then
-  echo "FAIL: File does not exist"
+# /etc/hosts.deny must deny every service to every client with an active
+# "ALL: ALL" rule (spacing is free; options may follow).
+FILE=/etc/hosts.deny
+
+if [ ! -f "$FILE" ]; then
+  echo "FAIL: $FILE does not exist"
   exit 1
 fi
 
-hosts_deny_content=$(cat /etc/hosts.deny)
-
-if echo "$hosts_deny_content" | grep -q "^ALL: ALL"; then
-  echo "PASS: File blocks all connections"
+if grep -Eq '^[[:space:]]*ALL[[:space:]]*:[[:space:]]*ALL[[:space:]]*(:|$)' "$FILE"; then
+  echo "PASS: $FILE denies all services to all clients (ALL: ALL)"
   exit 0
 fi
 
-echo "FAIL: File empty or does not block all connections"
+echo "FAIL: $FILE has no active ALL: ALL rule"
 exit 1

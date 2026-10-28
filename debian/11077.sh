@@ -1,26 +1,16 @@
 #!/bin/bash
 
-log_dir_perm=$(stat -c '%a' /var/log 2>/dev/null)
-if [ "$log_dir_perm" != "640" ] && [ "$log_dir_perm" != "600" ]; then
-  echo "FAIL: /var/log directory permissions are not restrictive (current: $log_dir_perm, expected: 640 or 600)"
+# Log files under /var/log must not be writable by their group or accessible
+# to others (0640 or stricter). wtmp, btmp and lastlog, written through the
+# utmp group and read by tools such as last, may be 0664.
+bad=$(find /var/log -type f \( \( -name 'wtmp*' -o -name 'btmp*' -o -name 'lastlog*' \) -perm /0113 \
+  -o ! \( -name 'wtmp*' -o -name 'btmp*' -o -name 'lastlog*' \) -perm /0137 \) -printf '%m %p\n' 2>/dev/null)
+
+if [ -n "$bad" ]; then
+  echo "$bad" | head -n 20 | sed 's/^/INFO: /'
+  echo "FAIL: $(echo "$bad" | wc -l) log files under /var/log are writable by their group or accessible to others"
   exit 1
 fi
 
-if [ -f /var/log/syslog ]; then
-  syslog_perm=$(stat -c '%a' /var/log/syslog 2>/dev/null)
-  if [ "$syslog_perm" != "640" ] && [ "$syslog_perm" != "600" ]; then
-    echo "FAIL: /var/log/syslog file permissions are not restrictive (current: $syslog_perm, expected: 640 or 600)"
-    exit 1
-  fi
-fi
-
-if [ -f /var/log/auth.log ]; then
-  authlog_perm=$(stat -c '%a' /var/log/auth.log 2>/dev/null)
-  if [ "$authlog_perm" != "640" ] && [ "$authlog_perm" != "600" ]; then
-    echo "FAIL: /var/log/auth.log file permissions are not restrictive (current: $authlog_perm, expected: 640 or 600)"
-    exit 1
-  fi
-fi
-
-echo "PASS: Log directory and files have proper restrictive permissions"
+echo "PASS: Log files under /var/log are 0640 or stricter (0664 for wtmp, btmp and lastlog)"
 exit 0

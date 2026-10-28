@@ -1,9 +1,15 @@
 #!/bin/bash
 
-if ! findmnt /tmp &> /dev/null; then
- echo "FAIL: /tmp partition is not configured"
- exit 1
+# /tmp must be a mount of its own (a partition, a logical volume or a tmpfs), not
+# a directory on the filesystem above it. findmnt -k reads the kernel's mount
+# table, so only what is mounted now counts, not what /etc/fstab lists.
+info=$(findmnt -kn -o SOURCE,FSTYPE,OPTIONS /tmp 2>/dev/null)
+
+if [ -z "$info" ]; then
+  echo "FAIL: /tmp is not a separate mount"
+  exit 1
 fi
 
-echo "PASS: /tmp partition is configured"
+echo "$info" | sed 's|^|INFO: /tmp: |'
+echo "PASS: /tmp is a separate mount"
 exit 0

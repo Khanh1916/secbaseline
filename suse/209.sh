@@ -1,9 +1,21 @@
 #!/bin/bash
 
-if ! findmnt -l | grep /dev/shm | grep -q nosuid; then
-  echo "FAIL: /dev/shm partition nosuid option is not configured"
+# /dev/shm must be a separate mount with the nosuid option. When several mounts are
+# stacked on /dev/shm, the last one is the one in use.
+opts=$(findmnt -kn -o OPTIONS /dev/shm 2>/dev/null | tail -n 1)
+
+if [ -z "$opts" ]; then
+  echo "FAIL: /dev/shm is not a separate mount"
   exit 1
 fi
 
-echo "PASS: /dev/shm partition nosuid option is configured"
-exit 0
+echo "INFO: /dev/shm options: $opts"
+case ",$opts," in
+  *,nosuid,*)
+    echo "PASS: /dev/shm is mounted with the nosuid option"
+    exit 0
+    ;;
+esac
+
+echo "FAIL: /dev/shm is not mounted with the nosuid option"
+exit 1

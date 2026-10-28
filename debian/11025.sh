@@ -1,16 +1,34 @@
 #!/bin/bash
-if ! command -v getenforce &>/dev/null; then
-	echo "FAIL: Command 'getenforce' not found; SELinux may not be installed"
-	exit 1
+
+# SELinux must be enforcing or permissive, both now (getenforce) and at the next boot
+# (SELINUX= in /etc/selinux/config).
+CONFIG=/etc/selinux/config
+MODES="enforcing permissive"
+
+if ! command -v getenforce >/dev/null 2>&1; then
+  echo "FAIL: getenforce not found; SELinux is not installed"
+  exit 1
 fi
 
-selinux_mode=$(getenforce)
+current=$(getenforce 2>/dev/null | tr 'A-Z' 'a-z')
+configured=$(awk -F= '/^[[:space:]]*SELINUX[[:space:]]*=/ {v = $2} END {gsub(/[[:space:]"]/, "", v); print tolower(v)}' "$CONFIG" 2>/dev/null)
+echo "INFO: getenforce: ${current:-unknown}; $CONFIG: SELINUX=${configured:-unset}"
 
-if [[ "$selinux_mode" == "Enforcing" || "$selinux_mode" == "Permissive" ]]; then
-	echo "PASS: SELinux is in $selinux_mode mode"
-	exit 0
-else
-	echo "FAIL: SELinux is in $selinux_mode mode"
-	exit 1
-fi
+case " $MODES " in
+  *" ${current:-none} "*) ;;
+  *)
+    echo "FAIL: SELinux is ${current:-not running}; it must be enforcing or permissive"
+    exit 1
+    ;;
+esac
 
+case " $MODES " in
+  *" ${configured:-none} "*) ;;
+  *)
+    echo "FAIL: $CONFIG sets SELINUX=${configured:-nothing}; it must be enforcing or permissive"
+    exit 1
+    ;;
+esac
+
+echo "PASS: SELinux is $current and configured as $configured"
+exit 0

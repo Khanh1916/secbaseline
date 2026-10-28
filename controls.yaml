@@ -285,7 +285,7 @@ controls:
     title: Ensure password reuse is limited
     ids: {ubuntu: 1084, debian: 11084, redhat: 2085, rocky: 3085, centos: 5085, suse: 284, oraclelinux: 184}
   - key: linux.auth.password_hash_sha512
-    title: Ensure the password hashing algorithm is SHA-512
+    title: Ensure the password hashing algorithm is SHA-512 or yescrypt
     ids: {ubuntu: 1085, debian: 11085, redhat: 2086, rocky: 3086, centos: 5086, suse: 285, oraclelinux: 185}
   - key: linux.auth.pass_max_days
     title: Ensure password expiration is 90 days or less

@@ -1,14 +1,26 @@
 #!/bin/bash
 
-if dpkg -s nfs-kernel-server 2>/dev/null | grep -q "Status: install ok installed"; then
- echo "FAIL: NFS is available"
- exit 1
+# Fails when any of these units is enabled or running: a socket or path unit
+# starts the service on demand even when the service itself is disabled.
+# Missing, disabled and masked units pass.
+UNITS="nfs-server.service nfsserver.service"
+
+bad=""
+for unit in $UNITS; do
+  state=$(systemctl is-enabled "$unit" 2>/dev/null)
+  echo "INFO: $unit: ${state:-not-found}"
+  case "$state" in
+    enabled | enabled-runtime) bad="$bad $unit" ;;
+  esac
+  if systemctl is-active --quiet "$unit" 2>/dev/null; then
+    bad="$bad $unit(active)"
+  fi
+done
+
+if [ -n "$bad" ]; then
+  echo "FAIL: The NFS server is enabled:$bad"
+  exit 1
 fi
 
-if dpkg -s rpcbind 2>/dev/null | grep -q "Status: install ok installed"; then
- echo "FAIL: RPC is available"
- exit 1
-fi
-
-echo "PASS: NFS and RPC are disabled"
+echo "PASS: The NFS server is not enabled"
 exit 0

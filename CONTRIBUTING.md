@@ -46,16 +46,33 @@ collectors:
 ## Adding or changing a control
 
 1. Write the script for every platform it applies to. Start from the closest existing check:
-   `redhat/` is the reference for the RHEL family (Rocky and CentOS are copies apart from the
-   banner check), `ubuntu/` for Debian (Debian is a renamed copy).
+   `redhat/` is the reference for the RHEL family (Rocky, CentOS and Oracle Linux are copies;
+   SUSE differs in some package names), `ubuntu/` for Debian (Debian is a renamed copy).
 2. Add or update the entry in `controls.yaml`: a new key, a title starting with "Ensure", and the
    script ID for each platform.
 3. Run `./checklist/checklist docs` to refresh the tables in the platform READMEs, then
    `./checklist/checklist lint`.
-4. Run the check on a real or virtual host. Network checks can be run against the sample
-   configuration in each network directory, and against an empty file (which must fail).
-   For network checks, add cases to `<platform>/testdata/<id>/` as `pass-<case>.cfg` or
-   `fail-<case>.cfg`; `go test ./runner` checks each verdict.
+4. Add cases that pin the verdict. Network checks can be run against the sample configuration
+   in each network directory, and against an empty file (which must fail).
+   - Network checks: add configurations to `<platform>/testdata/<id>/` as `pass-<case>.cfg` or
+     `fail-<case>.cfg`; `go test ./runner` checks each verdict.
+   - Linux checks: add setup scripts to `<platform>/testdata/<id>/` as `pass-<case>.sh` or
+     `fail-<case>.sh`. Each runs as root in a new privileged container of the distribution and
+     brings it into the state the name promises (install a package, write a configuration file,
+     mount a filesystem, set a network sysctl), using the helpers in
+     `checklist/runner/testdata/linux-setup.sh`. Debian uses the Ubuntu cases, and Rocky, CentOS,
+     Oracle Linux and SUSE use the Red Hat cases, for every control without a `testdata`
+     directory of their own. Run one platform with Docker:
+
+     ```bash
+     cd checklist
+     CHECKLIST_CASES_PLATFORM=ubuntu CHECKLIST_CASES_IMAGE=ubuntu:24.04 \
+       go test -count=1 -timeout 60m -run TestLinuxCases ./runner
+     ```
+
+     A control that a container cannot exercise (host kernel state) is listed with the reason
+     in `notCovered` in `checklist/runner/linux_cases_test.go`; `go test ./runner` fails when a
+     control has neither cases nor an entry there. CI runs every platform's cases in its image.
 
 ## Policies
 

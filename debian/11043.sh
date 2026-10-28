@@ -1,11 +1,25 @@
 #!/bin/bash
-dovecot_status=$(dpkg -s dovecot-core 2>&1)
 
-if echo "$dovecot_status" | grep -q "Status: install ok installed"; then
-	echo "FAIL: Package dovecot-core is installed"
-	exit 1
-else
-	echo "PASS: Package dovecot-core is not installed"
-	exit 0
+PACKAGES="dovecot-core dovecot-imapd dovecot-pop3d cyrus-imapd cyrus-pop3d"
+
+# A package counts as installed unless dpkg knows it only by its leftover
+# configuration files (removed, not purged) or not at all.
+installed() {
+  case "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" in
+    "" | not-installed | config-files) return 1 ;;
+  esac
+  return 0
+}
+
+found=""
+for p in $PACKAGES; do
+  installed "$p" && found="$found $p"
+done
+
+if [ -n "$found" ]; then
+  echo "FAIL: An IMAP/POP3 server is installed:$found"
+  exit 1
 fi
 
+echo "PASS: No IMAP/POP3 server is installed (checked: $PACKAGES)"
+exit 0

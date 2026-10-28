@@ -1,18 +1,15 @@
 #!/bin/bash
-df_output=$(df -h /var/log 2>&1)
 
-if echo "$df_output" | grep -q "No such file or directory"; then
-	  echo "FAIL: /var/log does not exist or is not a separate filesystem"
-	    exit 1
+# /var/log must be a mount of its own (a partition, a logical volume or a tmpfs), not
+# a directory on the filesystem above it. findmnt -k reads the kernel's mount
+# table, so only what is mounted now counts, not what /etc/fstab lists.
+info=$(findmnt -kn -o SOURCE,FSTYPE,OPTIONS /var/log 2>/dev/null)
+
+if [ -z "$info" ]; then
+  echo "FAIL: /var/log is not a separate mount"
+  exit 1
 fi
 
-fstab_entry=$(grep -E '^[^#].*\s/var/log\s' /etc/fstab)
-
-if [ -z "$fstab_entry" ]; then
-	  echo "FAIL: /var/log has no entry in /etc/fstab"
-	    exit 1
-fi
-
-echo "PASS: /var/log is a separate filesystem with an entry in /etc/fstab"
+echo "$info" | sed 's|^|INFO: /var/log: |'
+echo "PASS: /var/log is a separate mount"
 exit 0
-

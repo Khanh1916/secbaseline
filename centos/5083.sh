@@ -4,8 +4,9 @@
 # with minclass >= 4 or with dcredit, ucredit, lcredit and ocredit all <= -1.
 # Settings come from pwquality.conf and pwquality.conf.d/*.conf (when a setting
 # appears more than once, the weakest value is used) and are overridden by
-# arguments on the pam_pwquality.so line. Unset settings use the module
-# defaults (minlen 8, minclass 0, credits 0).
+# arguments on the pam_pwquality.so line. pam_cracklib.so (SUSE's default)
+# takes the same settings from its arguments only. Unset settings use the
+# module defaults (minlen 8, minclass 0, credits 0).
 MIN_LEN=14
 MIN_CLASS=4
 
@@ -24,8 +25,12 @@ found_pam=0
 weak=""
 for f in "${PAM_FILES[@]}"; do
   [ -f "$f" ] || continue
-  while IFS= read -r args; do
+  while IFS= read -r line; do
     found_pam=1
+    module=${line%%.so*}
+    args=${line#*.so}
+    confs=("${CONF_FILES[@]}")
+    [ "$module" = pam_cracklib ] && confs=(/dev/null)
     result=$(awk -v args="$args" -v min_len="$MIN_LEN" -v min_class="$MIN_CLASS" '
       function weaker(k, v) {
         if (!(k in val)) return 1
@@ -56,16 +61,17 @@ for f in "${PAM_FILES[@]}"; do
         if (required > classes) classes = required
         printf "minlen=%d classes=%d %s\n", minlen, classes, (minlen >= min_len && classes >= min_class) ? "ok" : "weak"
       }
-    ' "${CONF_FILES[@]}")
-    echo "INFO: $f: pam_pwquality.so effective $result"
+    ' "${confs[@]}")
+    echo "INFO: $f: $module.so effective $result"
     case "$result" in
       *weak) weak="$weak $f(${result% weak})" ;;
     esac
-  done < <(grep -E '^[[:space:]]*-?password[[:space:]].*pam_pwquality\.so' "$f" | sed 's/.*pam_pwquality\.so//')
+  done < <(grep -E '^[[:space:]]*-?password[[:space:]].*pam_(pwquality|cracklib)\.so' "$f" |
+    sed -E 's/.*(pam_(pwquality|cracklib)\.so)/\1/')
 done
 
 if [ $found_pam -eq 0 ]; then
-  echo "FAIL: pam_pwquality.so not found in any PAM password stack"
+  echo "FAIL: pam_pwquality.so or pam_cracklib.so not found in any PAM password stack"
   exit 1
 fi
 
@@ -74,5 +80,5 @@ if [ -n "$weak" ]; then
   exit 1
 fi
 
-echo "PASS: pam_pwquality.so requires minlen >= $MIN_LEN and $MIN_CLASS character classes"
+echo "PASS: Password quality requires minlen >= $MIN_LEN and $MIN_CLASS character classes"
 exit 0

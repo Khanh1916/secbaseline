@@ -51,7 +51,15 @@ func TestClassify(t *testing.T) {
 
 func TestSummarize(t *testing.T) {
 	s := summarize([]CheckResult{{Status: StatusPass}, {Status: StatusPass}, {Status: StatusFail}, {Status: StatusError}})
-	if s.Total != 4 || s.Pass != 2 || s.Fail != 1 || s.Error != 1 || s.Score != 66.7 {
+	if s.Total != 4 || s.Pass != 2 || s.Fail != 1 || s.Error != 1 || s.Score != 66.7 || !s.HasScore() {
 		t.Fatalf("summary = %+v", s)
+	}
+	for _, checks := range [][]CheckResult{nil, {{Status: StatusError}, {Status: StatusWaived}}} {
+		if s := summarize(checks); s.HasScore() || s.Score != 0 {
+			t.Errorf("summary of %v = %+v, want no score", checks, s)
+		}
+	}
+	if s := summarize([]CheckResult{{Status: StatusFail}}); !s.HasScore() || s.Score != 0 {
+		t.Errorf("all failing: %+v, want a score of 0", s)
 	}
 }

@@ -168,13 +168,7 @@ func runCmd() *cobra.Command {
 				}
 				fmt.Fprintln(os.Stderr, "uploaded:", url)
 			}
-			s := rep.Summary
-			waived := ""
-			if s.Waived > 0 {
-				waived = fmt.Sprintf(", %d waived", s.Waived)
-			}
-			fmt.Fprintf(os.Stderr, "%s: %d checks, %d passed, %d failed%s, %d errors (score %.1f%%)\n",
-				rep.Platform.Key, s.Total, s.Pass, s.Fail, waived, s.Error, s.Score)
+			fmt.Fprintln(os.Stderr, summaryLine(rep))
 			if rep.Policy != nil {
 				for _, w := range rep.Policy.ExpiredWaivers {
 					fmt.Fprintf(os.Stderr, "warning: waiver for %s expired on %s\n", w.Key, w.Expires)
@@ -375,6 +369,23 @@ func versionCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run:   func(cmd *cobra.Command, args []string) { fmt.Println(version) },
 	}
+}
+
+// summaryLine is the result line `checklist run` prints on stderr.
+func summaryLine(rep *runner.Report) string {
+	s := rep.Summary
+	line := fmt.Sprintf("%s: %d checks, %d passed, %d failed", rep.Platform.Key, s.Total, s.Pass, s.Fail)
+	if s.Waived > 0 {
+		line += fmt.Sprintf(", %d waived", s.Waived)
+	}
+	line += fmt.Sprintf(", %d errors", s.Error)
+	if n := len(rep.Collectors); n > 0 {
+		line += fmt.Sprintf(", %d collectors", n)
+	}
+	if !s.HasScore() {
+		return line + " (no score: no check passed or failed)"
+	}
+	return line + fmt.Sprintf(" (score %.1f%%)", s.Score)
 }
 
 func writeJSON(path string, rep *runner.Report) error {

@@ -27,7 +27,7 @@ header .sub { color: var(--muted); }
 .meta b { color: var(--text); font-weight: 600; }
 .summary { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; margin-bottom: 24px; }
 .score { width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center;
-  background: conic-gradient(var(--pass) calc({{.Summary.Score}} * 1%), var(--fail-bg) 0); }
+  background: {{if .Summary.HasScore}}conic-gradient(var(--pass) calc({{.Summary.Score}} * 1%), var(--fail-bg) 0){{else}}var(--line){{end}}; }
 .score div { width: 108px; height: 108px; border-radius: 50%; background: var(--card); display: grid; place-items: center; text-align: center; }
 .score strong { font-size: 26px; display: block; }
 .score span { color: var(--muted); font-size: 12px; }
@@ -87,7 +87,7 @@ footer, .meta b, .ctitle, .msg, .key { overflow-wrap: anywhere; }
 </div>
 
 <div class="summary">
-  <div class="score"><div><div><strong>{{.Summary.Score}}%</strong><span>compliant</span></div></div></div>
+  <div class="score"><div><div>{{if .Summary.HasScore}}<strong>{{.Summary.Score}}%</strong><span>compliant</span>{{else}}<strong>n/a</strong><span>no checks scored</span>{{end}}</div></div></div>
   <div class="tiles">
     <div class="tile"><div class="n">{{.Summary.Total}}</div><div class="l">Checks</div></div>
     <div class="tile pass"><div class="n">{{.Summary.Pass}}</div><div class="l">Passed</div></div>

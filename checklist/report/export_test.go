@@ -74,6 +74,31 @@ func TestSARIF(t *testing.T) {
 	}
 }
 
+func TestSARIFScore(t *testing.T) {
+	score := func(rep *runner.Report) (any, bool) {
+		var b strings.Builder
+		if err := WriteSARIF(&b, rep); err != nil {
+			t.Fatal(err)
+		}
+		var doc struct {
+			Runs []struct{ Properties map[string]any }
+		}
+		if err := json.Unmarshal([]byte(b.String()), &doc); err != nil {
+			t.Fatal(err)
+		}
+		v, ok := doc.Runs[0].Properties["score"]
+		return v, ok
+	}
+	if v, ok := score(sampleReport()); !ok || v != 50.0 {
+		t.Errorf("score = %v, %v; want 50", v, ok)
+	}
+	rep := sampleReport()
+	rep.Checks, rep.Summary = nil, runner.Summary{}
+	if v, ok := score(rep); ok {
+		t.Errorf("report without checks has score %v", v)
+	}
+}
+
 func TestJUnit(t *testing.T) {
 	var b strings.Builder
 	if err := WriteJUnit(&b, sampleReport()); err != nil {

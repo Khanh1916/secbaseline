@@ -88,6 +88,8 @@ func TestCompareAcrossSelections(t *testing.T) {
 	}, ports)
 	subset := rep(100, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}, {Key: "linux.ssh.new", Status: "pass"}})
 	subset.Only = []string{"linux.ssh"}
+	sameSubset := rep(50, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}, {Key: "linux.ssh.new", Status: "pass"}})
+	sameSubset.Only = []string{"linux.ssh"}
 	collect := rep(0, nil, ports)
 	collect.Summary, collect.Only = runner.Summary{}, []string{"collect."}
 	profile := rep(100, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}, {Key: "linux.ssh.gone", Status: "pass"}})
@@ -99,15 +101,22 @@ func TestCompareAcrossSelections(t *testing.T) {
 		changed  []string // keys under Changed
 		notRun   int
 		text     string
+		score    string // the Score line; a delta only when both runs ran the same checks
 	}{
 		// linux.auth.pw was not run; linux.ssh.gone was in scope and is gone, linux.ssh.new is new.
-		{"subset after full", full, subset, []string{"linux.ssh.new", "linux.ssh.gone"}, 1, "1 check not compared"},
-		{"full after subset", subset, full, []string{"linux.ssh.gone", "linux.ssh.new"}, 1, "1 check not compared"},
-		{"collector-only after full", full, collect, nil, 3, "No changes.\n\n3 checks not compared"},
-		{"full after collector-only", collect, full, nil, 3, "3 checks not compared"},
-		{"policy profile after full", full, profile, nil, 1, "No changes."},
+		{"subset after full", full, subset, []string{"linux.ssh.new", "linux.ssh.gone"}, 1, "1 check not compared",
+			"Score: 66.7% -> 100.0% (no change computed: the reports ran different checks)\n"},
+		{"full after subset", subset, full, []string{"linux.ssh.gone", "linux.ssh.new"}, 1, "1 check not compared",
+			"Score: 100.0% -> 66.7% (no change computed: the reports ran different checks)\n"},
+		{"collector-only after full", full, collect, nil, 3, "No changes.\n\n3 checks not compared", "Score: 66.7% -> n/a\n"},
+		{"full after collector-only", collect, full, nil, 3, "3 checks not compared", "Score: n/a -> 66.7%\n"},
+		{"policy profile after full", full, profile, nil, 1, "No changes.",
+			"Score: 66.7% -> 100.0% (no change computed: the reports ran different checks)\n"},
+		// The same --only twice ran the same checks, so the scores compare.
+		{"same subset twice", subset, sameSubset, nil, 0, "No changes.", "Score: 100.0% -> 50.0% (-50.0)\n"},
 		// A report without a recorded selection ran everything, so a missing check is a change.
-		{"unrecorded selection", subset, rep(100, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}}), []string{"linux.ssh.new"}, 0, "absent"},
+		{"unrecorded selection", subset, rep(90, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}}), []string{"linux.ssh.new"}, 0, "absent",
+			"Score: 100.0% -> 90.0% (-10.0)\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := Compare(tc.old, tc.cur)
@@ -125,6 +134,12 @@ func TestCompareAcrossSelections(t *testing.T) {
 			WriteText(&b, r)
 			if !strings.Contains(b.String(), tc.text) || (tc.notRun == 0) != !strings.Contains(b.String(), "not compared") {
 				t.Errorf("text missing %q:\n%s", tc.text, b.String())
+			}
+			if !strings.Contains(b.String(), tc.score) || r.HasDelta() != (tc.notRun == 0) || (!r.HasDelta() && r.ScoreDelta != 0) {
+				t.Errorf("score line %q, has delta %v, delta %v:\n%s", tc.score, r.HasDelta(), r.ScoreDelta, b.String())
+			}
+			if Comparable(tc.old, tc.cur) != (tc.notRun == 0) {
+				t.Errorf("Comparable = %v with %d checks not compared", Comparable(tc.old, tc.cur), tc.notRun)
 			}
 		})
 	}

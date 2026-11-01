@@ -7,6 +7,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -211,6 +212,9 @@ func TestDriftAcrossSelections(t *testing.T) {
 				rep.Summary.Fail++
 			}
 		}
+		if rep.Summary.HasScore() {
+			rep.Summary.Score = float64(100*rep.Summary.Pass) / float64(rep.Summary.Pass+rep.Summary.Fail)
+		}
 		b, err := json.Marshal(rep)
 		if err != nil {
 			t.Fatal(err)
@@ -229,6 +233,11 @@ func TestDriftAcrossSelections(t *testing.T) {
 	upload("inventory", later, []string{"collect."}, nil, ports)
 	upload("removed", day, nil, full, ports) // a full run without a check the previous one had
 	upload("removed", later, nil, []runner.CheckResult{ssh}, ports)
+	fixed := auth
+	fixed.Status = runner.StatusPass
+	upload("trend", day, []string{"linux.ssh"}, []runner.CheckResult{ssh}) // a subset, then two full runs
+	upload("trend", later, nil, full)
+	upload("trend", later.Add(time.Hour), nil, []runner.CheckResult{ssh, fixed})
 
 	resp, err := http.Get(ts.URL + "/api/subjects")
 	if err != nil {
@@ -239,12 +248,19 @@ func TestDriftAcrossSelections(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&subs); err != nil {
 		t.Fatal(err)
 	}
-	drifted := map[string]bool{}
+	drifted, deltas := map[string]bool{}, map[string]float64{}
 	for _, s := range subs {
 		drifted[s.ID] = s.Drift
+		if s.HasDelta {
+			deltas[s.ID] = s.Delta
+		}
 	}
-	if want := map[string]bool{"ubuntu_subset": false, "ubuntu_full": false, "ubuntu_inventory": false, "ubuntu_removed": true}; !maps.Equal(drifted, want) {
+	if want := map[string]bool{"ubuntu_subset": false, "ubuntu_full": false, "ubuntu_inventory": false, "ubuntu_removed": true, "ubuntu_trend": false}; !maps.Equal(drifted, want) {
 		t.Errorf("drift = %v, want %v", drifted, want)
+	}
+	// Only reports that ran the same checks have a score change.
+	if want := map[string]float64{"ubuntu_removed": 50, "ubuntu_trend": 50}; !maps.Equal(deltas, want) {
+		t.Errorf("deltas = %v, want %v", deltas, want)
 	}
 	if _, body := get(t, ts.URL+"/", "", ""); strings.Count(body, ">drift</span>") != 1 {
 		t.Errorf("overview should show one drift pill:\n%s", body)
@@ -260,5 +276,15 @@ func TestDriftAcrossSelections(t *testing.T) {
 		if !strings.Contains(body, want) || strings.Contains(body, "Other changes") != (id == "removed") {
 			t.Errorf("%s: subject page missing %q:\n%s", id, want, body)
 		}
+		if strings.Contains(body, "points)") != (id == "removed") || strings.Contains(body, "<polyline") != (id == "removed") {
+			t.Errorf("%s: score change or trend across different checks:\n%s", id, body)
+		}
+	}
+
+	// The trend plots the two full runs and leaves out the subset before them.
+	_, body := get(t, ts.URL+"/s/ubuntu_trend", "", "")
+	m := regexp.MustCompile(`<polyline points="([^"]*)"`).FindStringSubmatch(body)
+	if m == nil || len(strings.Fields(m[1])) != 2 || !strings.Contains(body, "· 1 report that ran other checks left out") || !strings.Contains(body, "(&#43;50.0 points)") {
+		t.Errorf("trend page:\n%s", body)
 	}
 }

@@ -149,7 +149,7 @@ type SubjectSummary struct {
 	LastSeen    time.Time      `json:"last_seen"`
 	Reports     int            `json:"reports"`
 	HasPrevious bool           `json:"has_previous"`
-	HasDelta    bool           `json:"has_delta"` // the latest and previous reports both have a score
+	HasDelta    bool           `json:"has_delta"` // the latest and previous reports both have a score and ran the same checks
 	Delta       float64        `json:"delta"`
 	Regressions int            `json:"regressions"`
 	Drift       bool           `json:"drift"`
@@ -224,6 +224,9 @@ type historyRow struct {
 	File    string
 	Started time.Time
 	Summary runner.Summary
+	// Comparable is false when the report ran other checks than the latest one
+	// (--only, policy profile), so its score is left out of the trend.
+	Comparable bool
 }
 
 func (s *Server) subject(w http.ResponseWriter, r *http.Request) {
@@ -248,9 +251,17 @@ func (s *Server) subject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	latest := reps[len(reps)-1]
+	omitted := 0
+	for i, rep := range reps {
+		rows[i].Comparable = drift.Comparable(rep, latest)
+		if rows[i].Summary.HasScore() && !rows[i].Comparable {
+			omitted++
+		}
+	}
 	data := map[string]any{
 		"ID": id, "Subject": drift.Subject(latest), "Platform": latest.Platform.Name, "Latest": latest,
-		"LatestFile": rows[len(rows)-1].File, "Rows": reverse(rows), "Trend": trend(rows), "Version": s.cfg.Version,
+		"LatestFile": rows[len(rows)-1].File, "Rows": reverse(rows), "Trend": trend(rows), "TrendOmitted": omitted,
+		"Version": s.cfg.Version,
 	}
 	if len(reps) > 1 {
 		data["Drift"] = drift.Compare(reps[len(reps)-2], latest)
@@ -288,7 +299,7 @@ func trend(rows []historyRow) string {
 		step = (width - pad - left) / float64(len(rows)-1)
 	}
 	for i, r := range rows {
-		if !r.Summary.HasScore() {
+		if !r.Summary.HasScore() || !r.Comparable {
 			continue
 		}
 		x := left + step*float64(i)

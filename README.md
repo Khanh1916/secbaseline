@@ -235,8 +235,8 @@ gh attestation verify oci://ghcr.io/khanh1916/secbaseline:latest --repo Khanh191
 
 ## Known limitations
 
-- Windows password complexity, reversible encryption and audit policy checks need an elevated
-  session; without one they report `FAIL` with the reason.
+- Windows password complexity, reversible encryption, user rights and audit policy checks need
+  an elevated session; without one they report `FAIL` with the reason.
 
 ## Author
 

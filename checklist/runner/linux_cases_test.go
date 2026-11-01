@@ -55,10 +55,11 @@ type caseFile struct {
 	key, id, path, want string
 }
 
-// linuxCases returns the cases of every control of a Linux platform, by
-// control key. Paths are relative to the repository root.
-func linuxCases(cat *catalog.Catalog, platform string) (map[string][]caseFile, error) {
+// hostCases returns the cases of every control of a Linux or Windows
+// platform, by control key. Paths are relative to the repository root.
+func hostCases(cat *catalog.Catalog, platform string) (map[string][]caseFile, error) {
 	out := map[string][]caseFile{}
+	ext := cat.Platforms[platform].Extension()
 	for _, it := range cat.ControlsFor(platform) {
 		id := strconv.Itoa(it.IDs[platform])
 		dir := filepath.Join(platform, "testdata", id)
@@ -70,7 +71,7 @@ func linuxCases(cat *catalog.Catalog, platform string) (map[string][]caseFile, e
 			}
 			dir = filepath.Join(src, "testdata", strconv.Itoa(srcID))
 		}
-		files, err := filepath.Glob(filepath.Join(cat.Root, dir, "*.sh"))
+		files, err := filepath.Glob(filepath.Join(cat.Root, dir, "*"+ext))
 		if err != nil {
 			return nil, err
 		}
@@ -102,15 +103,15 @@ func loadCatalog(t *testing.T) *catalog.Catalog {
 	return cat
 }
 
-// TestLinuxCaseCoverage keeps notCovered honest: every Linux control has
-// cases on every platform, or is listed there, but not both.
-func TestLinuxCaseCoverage(t *testing.T) {
+// TestHostCaseCoverage keeps notCovered honest: every Linux and Windows
+// control has cases on every platform, or is listed there, but not both.
+func TestHostCaseCoverage(t *testing.T) {
 	cat := loadCatalog(t)
 	for _, platform := range cat.PlatformNames() {
-		if cat.Platforms[platform].Kind != catalog.KindLinux {
+		if cat.Platforms[platform].Kind == catalog.KindNetwork {
 			continue
 		}
-		cases, err := linuxCases(cat, platform)
+		cases, err := hostCases(cat, platform)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -148,7 +149,7 @@ func TestLinuxCases(t *testing.T) {
 	if p, ok := cat.Platforms[platform]; !ok || p.Kind != catalog.KindLinux {
 		t.Fatalf("%s is not a Linux platform", platform)
 	}
-	cases, err := linuxCases(cat, platform)
+	cases, err := hostCases(cat, platform)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,6 +196,13 @@ cat /tmp/case.json`, caseRoot, c.path, platform, c.key)
 	if err := json.Unmarshal(stdout.Bytes(), &rep); err != nil {
 		t.Fatalf("%s: report: %v\n%s", c.path, err, lastLines(stderr.String(), 40))
 	}
+	checkVerdict(t, platform, c, &rep)
+}
+
+// checkVerdict compares the verdict of the one check in rep with the verdict
+// the case's file name starts with.
+func checkVerdict(t *testing.T, platform string, c caseFile, rep *Report) {
+	t.Helper()
 	if len(rep.Checks) != 1 {
 		t.Fatalf("%s: ran %d checks, want 1", c.path, len(rep.Checks))
 	}

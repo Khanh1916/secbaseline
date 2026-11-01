@@ -28,9 +28,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
   fall back to `net accounts`, read by field position rather than by its localized labels.
 - Audit checks (`4010`–`4024`) read `auditpol /backup`, which identifies subcategories by GUID and
   settings by number. A subcategory set to Success and Failure includes Success.
+- `4007` reads user rights exported by `secedit` and needs elevation; a right that no account
+  holds is not exported at all, which is the compliant state.
+- `4009` and `4053` find the built-in Guest and Administrator accounts by SID (`-501`, `-500`),
+  so a renamed account and localized names are handled.
+- Settings that Group Policy can override are read with the policy value first: Remote Desktop
+  (`4039`) and the firewall profiles in effect (`4040`, the active store).
 - Checks that use `secedit` or `auditpol` export the policy to a temporary file and delete it
   afterwards.
 - `4026.ps1` uses `Get-WBPolicy`, which exists only where Windows Server Backup is installed.
+- Verdict cases for every check are in `testdata/<id>/`; they change the machine's settings and
+  run only in CI (see `CONTRIBUTING.md`).
 
 <!-- BEGIN GENERATED: checklist docs -->
 
@@ -69,7 +77,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
 | [4039](4039.ps1) | Ensure Remote Desktop requires Network Level Authentication | `windows.remote.rdp_nla_required` |
 | [4040](4040.ps1) | Ensure Windows Firewall is enabled for all profiles | `windows.firewall.all_profiles_enabled` |
 | [4041](4041.ps1) | Ensure User Account Control is enabled | `windows.uac.enabled` |
-| [4042](4042.ps1) | Ensure UAC prompts administrators for consent on the secure desktop | `windows.uac.admin_consent_prompt` |
+| [4042](4042.ps1) | Ensure UAC prompts administrators for consent or credentials on the secure desktop | `windows.uac.admin_consent_prompt` |
 | [4043](4043.ps1) | Ensure LLMNR (multicast name resolution) is disabled | `windows.network.llmnr_disabled` |
 | [4044](4044.ps1) | Ensure WDigest does not store plaintext credentials | `windows.credentials.wdigest_disabled` |
 | [4045](4045.ps1) | Ensure LSA protection (RunAsPPL) is enabled | `windows.credentials.lsa_protection` |

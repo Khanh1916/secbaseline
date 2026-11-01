@@ -73,6 +73,31 @@ collectors:
      A control that a container cannot exercise (host kernel state) is listed with the reason
      in `notCovered` in `checklist/runner/linux_cases_test.go`; `go test ./runner` fails when a
      control has neither cases nor an entry there. CI runs every platform's cases in its image.
+   - Windows checks: add setup scripts to `windows/testdata/<id>/` as `pass-<case>.ps1` or
+     `fail-<case>.ps1`. There is no container: a case changes the security settings of the
+     machine it runs on, so the cases only run on a disposable GitHub runner, in the
+     `windows (verdict cases)` CI job, which is the only place that sets
+     `CHECKLIST_CASES_WINDOWS=1`. Do not set it on a machine you want to keep; push a branch
+     and read the job's log instead. Each setup runs elevated inside
+     `checklist/runner/testdata/windows-setup.ps1` and changes settings only through its
+     helpers, which record the old value before changing it, so the state is restored after
+     the check and cases do not leak into each other:
+
+     ```powershell
+     # Lockout after 5 bad passwords, for 15 minutes.
+     Set-SecurityPolicy @{ LockoutBadCount = 5; ResetLockoutCount = 15; LockoutDuration = 15 }
+     ```
+
+     The helpers cover registry values (`Set-RegistryValue`, `Remove-RegistryValue`), the local
+     security policy (`Set-SecurityPolicy` for `[System Access]`, `Set-UserRight`), audit
+     subcategories by English name (`Set-AuditPolicy 'Process Creation' -Success`), services,
+     firewall profiles, built-in accounts by RID, Defender, SMB server settings, event log
+     sizes and Windows Server Backup. Add a helper there, with its restore step, rather than
+     changing a setting directly in a case. A setup that exits 77 (`Skip-Case '<reason>'`) skips
+     its case, for a state the runner cannot provide. Cases of a control run in name order.
+     The checks run elevated, as the runner is; a case named `<verdict>-<case>-unelevated.ps1`
+     runs its check as LOCAL SERVICE instead, which has no administrator rights, to pin what a
+     check does without elevation (the `net accounts` fallback, or `FAIL` with the reason).
 
 ## Policies
 

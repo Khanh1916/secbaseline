@@ -396,7 +396,7 @@ controls:
     title: Ensure User Account Control is enabled
     ids: {windows: 4041}
   - key: windows.uac.admin_consent_prompt
-    title: Ensure UAC prompts administrators for consent on the secure desktop
+    title: Ensure UAC prompts administrators for consent or credentials on the secure desktop
     ids: {windows: 4042}
   - key: windows.network.llmnr_disabled
     title: Ensure LLMNR (multicast name resolution) is disabled

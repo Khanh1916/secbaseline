@@ -1,4 +1,4 @@
-# Ensure 'Account Lockout' auditing includes Success
+# Ensure 'Account Lockout' auditing includes Failure
 $name = "Account Lockout"
 $subcategory = "{0CCE9217-69AE-11D9-BED3-505054503030}"
 
@@ -26,8 +26,8 @@ if ($null -eq $setting) {
 }
 
 $labels = @{ 0 = "No Auditing"; 1 = "Success"; 2 = "Failure"; 3 = "Success and Failure" }
-if (($setting -band 1) -eq 0) {
-    Write-Output "FAIL: $name auditing is set to $($labels[$setting]), which does not include Success"
+if (($setting -band 2) -eq 0) {
+    Write-Output "FAIL: $name auditing is set to $($labels[$setting]), which does not include Failure"
     exit 1
 }
 

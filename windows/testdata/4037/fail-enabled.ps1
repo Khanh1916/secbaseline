@@ -1,8 +1,10 @@
-# The SMBv1 server protocol is enabled. Windows Server 2025 ships without the
-# SMBv1 server, so the feature is added first.
-Install-ServerFeature FS-SMB1
+# The SMBv1 server protocol is enabled. Windows Server 2025 has no SMBv1 server
+# to turn on, so there it is enabled with the documented registry value.
 try {
     Set-SmbServer @{ EnableSMB1Protocol = $true }
 } catch {
-    Skip-Case "the SMBv1 server cannot be enabled here: $_"
+    Set-RegistryValue 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' SMB1 1
+}
+if (-not (Get-SmbServerConfiguration).EnableSMB1Protocol) {
+    Skip-Case 'Get-SmbServerConfiguration does not report SMBv1 as enabled'
 }

@@ -20,10 +20,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Skip-Case ends the case without a verdict, for a state this machine cannot provide.
+# Skip-Case ends the case without a verdict, for a state this machine cannot
+# provide. exit in a dot-sourced script only ends that script, so the flag
+# tells the code after it to exit with 77.
+$skipped = $false
 function Skip-Case([string]$Reason) {
     [Console]::Error.WriteLine("SKIP: $Reason")
-    exit 77
+    $script:skipped = $true
+    exit
 }
 
 # The undo file holds one hashtable per change. They are written through the
@@ -194,6 +198,27 @@ function Set-FirewallProfile([string]$Name, [string]$Enabled) {
     Set-NetFirewallProfile -Name $Name -PolicyStore PersistentStore -Enabled $Enabled
 }
 
+function Update-ComputerPolicy {
+    gpupdate /target:computer /force | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "gpupdate failed with exit code $LASTEXITCODE" }
+}
+
+# Set-FirewallPolicy sets the Group Policy EnableFirewall value of a profile
+# (Domain, Private, Public) to 0 or 1, or removes it ($null), and refreshes
+# the computer policy so that the firewall service reads it; restore removes
+# or resets the value and refreshes again.
+function Set-FirewallPolicy([string]$Name, $Enabled) {
+    # Undo runs last first, so this refresh runs after the value is restored.
+    Add-Undo @{ Kind = 'gpupdate' }
+    $path = "HKLM:\SOFTWARE\Policies\Microsoft\WindowsFirewall\$($Name)Profile"
+    if ($null -eq $Enabled) {
+        Remove-RegistryValue $path EnableFirewall
+    } else {
+        Set-RegistryValue $path EnableFirewall $Enabled
+    }
+    Update-ComputerPolicy
+}
+
 # Wait-FirewallProfile waits until the firewall service applies a profile's
 # state, which it does some time after a policy value changes.
 function Wait-FirewallProfile([string]$Name, [bool]$Enabled) {
@@ -358,6 +383,7 @@ function Restore-Entry([hashtable]$e) {
         'audit' { Write-AuditPolicy $e.Subcategory $e.Success $e.Failure }
         'service' { Set-Service -Name $e.Name -StartupType $e.StartupType }
         'firewall' { Set-NetFirewallProfile -Name $e.Name -PolicyStore PersistentStore -Enabled $e.Enabled }
+        'gpupdate' { Update-ComputerPolicy }
         'account' {
             $user = Get-BuiltinAccount $e.Rid
             if ($user.Name -ne $e.Name) { Rename-LocalUser -SID $user.SID -NewName $e.Name }
@@ -411,4 +437,5 @@ if ($Unelevated) {
 
 if (-not $Case) { throw "give -Case <setup.ps1>, -Restore or -Unelevated <check.ps1>" }
 . $Case
+if ($skipped) { exit 77 }
 exit 0

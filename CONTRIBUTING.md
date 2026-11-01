@@ -95,6 +95,9 @@ collectors:
      sizes and Windows Server Backup. Add a helper there, with its restore step, rather than
      changing a setting directly in a case. A setup that exits 77 (`Skip-Case '<reason>'`) skips
      its case, for a state the runner cannot provide. Cases of a control run in name order.
+     The checks run elevated, as the runner is; a case named `<verdict>-<case>-unelevated.ps1`
+     runs its check as LOCAL SERVICE instead, which has no administrator rights, to pin what a
+     check does without elevation (the `net accounts` fallback, or `FAIL` with the reason).
 
 ## Policies
 

@@ -8,9 +8,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"checklist/catalog"
 )
 
 // Windows host checks are tested on the machine that runs the test. A case is
@@ -23,6 +26,11 @@ import (
 // setting before they change it; that state is restored after the check, so
 // that cases do not leak into each other. A setup that exits 77 skips its case
 // (for example a feature this edition of Windows does not have).
+//
+// The test runs elevated, as the checks are meant to. A case whose name ends
+// in -unelevated runs its check as LOCAL SERVICE instead, an account without
+// administrator rights, for the checks that fall back to other sources or
+// must fail with a reason without elevation.
 //
 // The cases change the security settings of the machine they run on, so they
 // only run where CHECKLIST_CASES_WINDOWS=1 is set: in CI, on a disposable
@@ -82,6 +90,10 @@ func TestWindowsCases(t *testing.T) {
 				case err != nil:
 					t.Fatalf("%s: %v\n%s", c.path, err, lastLines(out, 40))
 				}
+				if strings.HasSuffix(name, "-unelevated") {
+					checkVerdict(t, "windows", c, runUnelevated(t, setup, undo, cat, c))
+					return
+				}
 				rep, err := Run(context.Background(), cat, Options{
 					Platform: "windows",
 					Only:     []string{c.key},
@@ -95,6 +107,31 @@ func TestWindowsCases(t *testing.T) {
 			})
 		}
 	}
+}
+
+// runUnelevated runs the check of a case as LOCAL SERVICE, an account without
+// administrator rights, and reads its output as Run does.
+func runUnelevated(t *testing.T, setup, undo string, cat *catalog.Catalog, c caseFile) *Report {
+	t.Helper()
+	id, err := strconv.Atoi(c.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := windowsSetup(setup, "-Undo", undo, "-Unelevated", cat.ScriptPath("windows", id))
+	code := 0
+	var exitErr *exec.ExitError
+	switch {
+	case errors.As(err, &exitErr) && exitErr.ExitCode() == 2:
+		t.Fatalf("%s: %s", c.path, lastLines(out, 40))
+	case errors.As(err, &exitErr):
+		code = exitErr.ExitCode()
+	case err != nil:
+		t.Fatalf("%s: %v", c.path, err)
+	}
+	p := parseOutput(out)
+	r := CheckResult{Key: c.key, ID: c.id, ExitCode: code, Message: p.message, Details: p.details}
+	r.Status, r.Error = classify(p, code)
+	return &Report{Checks: []CheckResult{r}}
 }
 
 // windowsSetup runs windows-setup.ps1 with the given arguments.

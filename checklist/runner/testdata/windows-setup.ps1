@@ -7,10 +7,15 @@
 #
 #   windows-setup.ps1 -Undo <file> -Case <setup.ps1>
 #   windows-setup.ps1 -Undo <file> -Restore
+#
+# -Unelevated <check.ps1> runs a check as LOCAL SERVICE, an account without
+# administrator rights, prints its output and exits with its exit code (2 when
+# the check could not be run).
 param(
     [Parameter(Mandatory = $true)][string]$Undo,
     [string]$Case,
-    [switch]$Restore
+    [switch]$Restore,
+    [string]$Unelevated
 )
 
 $ErrorActionPreference = 'Stop'
@@ -260,16 +265,27 @@ function Set-EventLogSize([string]$Log, [int64]$Bytes) {
     if ($LASTEXITCODE -ne 0) { throw "wevtutil sl $Log /ms:$Bytes failed with exit code $LASTEXITCODE" }
 }
 
-# Install-WindowsServerBackup adds the Windows Server Backup feature, or skips
-# the case where Windows has no such feature. The feature stays installed:
-# removing it needs a restart.
+# Install-ServerFeature adds a Windows Server feature (FS-SMB1, ...), or skips
+# the case where Windows has no such feature or cannot install it. Features
+# stay installed: removing one needs a restart.
+function Install-ServerFeature([string]$Name) {
+    if (-not (Get-Command Get-WindowsFeature -ErrorAction SilentlyContinue)) {
+        Skip-Case "$Name is a Windows Server feature"
+    }
+    $feature = Get-WindowsFeature -Name $Name
+    if (-not $feature) { Skip-Case "this Windows has no feature $Name" }
+    if ($feature.Installed) { return }
+    try {
+        $result = Install-WindowsFeature -Name $Name
+    } catch {
+        Skip-Case "$Name could not be installed: $_"
+    }
+    if (-not $result.Success) { Skip-Case "$Name could not be installed" }
+}
+
 function Install-WindowsServerBackup {
     if (Get-Command Get-WBPolicy -ErrorAction SilentlyContinue) { return }
-    if (-not (Get-Command Install-WindowsFeature -ErrorAction SilentlyContinue)) {
-        Skip-Case "Windows Server Backup is a Windows Server feature"
-    }
-    $result = Install-WindowsFeature -Name Windows-Server-Backup
-    if (-not $result.Success) { Skip-Case "Windows Server Backup could not be installed" }
+    Install-ServerFeature Windows-Server-Backup
     Import-Module WindowsServerBackup
 }
 
@@ -282,6 +298,38 @@ function Set-BackupPolicy($Policy) {
     if ($null -eq $Policy) { return }
     Add-Undo @{ Kind = 'backup' }
     Set-WBPolicy -Policy $Policy -Force
+}
+
+# --- Checks without elevation -----------------------------------------------
+
+# Invoke-Unelevated runs a check through a scheduled task as LOCAL SERVICE
+# (S-1-5-19), which has no administrator rights, and returns its output lines
+# and exit code.
+function Invoke-Unelevated([string]$Script) {
+    $dir = New-CaseTemp
+    $task = "secbaseline-case-" + [guid]::NewGuid().ToString()
+    try {
+        Copy-Item -LiteralPath $Script -Destination "$dir\check.ps1"
+        icacls $dir /grant '*S-1-5-19:(OI)(CI)M' | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "icacls $dir failed with exit code $LASTEXITCODE" }
+        $command = "& '$dir\check.ps1' > '$dir\out.txt'; exit `$LASTEXITCODE"
+        $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command `"$command`""
+        $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LOCAL SERVICE' -LogonType ServiceAccount
+        Register-ScheduledTask -TaskName $task -Action $action -Principal $principal | Out-Null
+        Start-ScheduledTask -TaskName $task
+        # 267009 is "running", 267011 "has not run yet".
+        for ($i = 0; $i -lt 240; $i++) {
+            Start-Sleep -Milliseconds 500
+            $info = Get-ScheduledTaskInfo -TaskName $task
+            if ((Get-ScheduledTask -TaskName $task).State -ne 'Running' -and $info.LastTaskResult -notin 267009, 267011) {
+                return @{ Output = @(Get-Content -LiteralPath "$dir\out.txt" -ErrorAction SilentlyContinue); ExitCode = [int]$info.LastTaskResult }
+            }
+        }
+        throw "the check did not finish within 2 minutes"
+    } finally {
+        Unregister-ScheduledTask -TaskName $task -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # --- Restore and run --------------------------------------------------------
@@ -350,6 +398,17 @@ if ($Restore) {
     exit 0
 }
 
-if (-not $Case) { throw "give -Case <setup.ps1> or -Restore" }
+if ($Unelevated) {
+    try {
+        $result = Invoke-Unelevated $Unelevated
+    } catch {
+        [Console]::Error.WriteLine("running $Unelevated as LOCAL SERVICE: $_")
+        exit 2
+    }
+    $result.Output | ForEach-Object { Write-Output $_ }
+    exit $result.ExitCode
+}
+
+if (-not $Case) { throw "give -Case <setup.ps1>, -Restore or -Unelevated <check.ps1>" }
 . $Case
 exit 0

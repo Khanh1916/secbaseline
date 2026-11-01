@@ -55,8 +55,14 @@ func TestWindowsCases(t *testing.T) {
 		keys = append(keys, k)
 	}
 	slices.Sort(keys)
+	// After a failed restore the machine is in an unknown state, so the
+	// verdicts of later cases would mean nothing.
+	var unrestored string
 	for _, key := range keys {
 		for _, c := range cases[key] {
+			if unrestored != "" {
+				t.Fatalf("stopped: the settings changed by %s could not be restored", unrestored)
+			}
 			name := key + "/" + strings.TrimSuffix(filepath.Base(c.path), ".ps1")
 			t.Run(name, func(t *testing.T) {
 				undo := filepath.Join(t.TempDir(), "undo.xml")
@@ -64,6 +70,7 @@ func TestWindowsCases(t *testing.T) {
 				// temporary directory with the undo file is removed.
 				t.Cleanup(func() {
 					if out, err := windowsSetup(setup, "-Undo", undo, "-Restore"); err != nil {
+						unrestored = c.path
 						t.Errorf("%s: restoring the settings: %v\n%s", c.path, err, lastLines(out, 40))
 					}
 				})

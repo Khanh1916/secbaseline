@@ -21,11 +21,16 @@ function Skip-Case([string]$Reason) {
     exit 77
 }
 
+# The undo file holds one hashtable per change. They are written through the
+# pipeline: Export-Clixml -InputObject would store the array as one ArrayList.
+function Read-Undo {
+    if (-not (Test-Path -LiteralPath $Undo)) { return @() }
+    return @(Import-Clixml -LiteralPath $Undo)
+}
+
 function Add-Undo([hashtable]$Entry) {
-    $entries = @()
-    if (Test-Path -LiteralPath $Undo) { $entries = @(Import-Clixml -LiteralPath $Undo) }
-    $entries += $Entry
-    Export-Clixml -LiteralPath $Undo -InputObject $entries
+    $entries = @(Read-Undo) + $Entry
+    $entries | Export-Clixml -LiteralPath $Undo
 }
 
 function New-CaseTemp {
@@ -287,7 +292,13 @@ function Restore-Entry([hashtable]$e) {
             if ($e.Created) {
                 Remove-Item -LiteralPath $e.Created -Recurse -Force -ErrorAction SilentlyContinue
             } elseif ($e.Exists) {
-                New-ItemProperty -LiteralPath $e.Path -Name $e.Name -Value $e.Value -PropertyType $e.Type -Force | Out-Null
+                # Arrays come back from the undo file as ArrayLists.
+                $value = switch ($e.Type) {
+                    'MultiString' { [string[]]$e.Value }
+                    'Binary' { [byte[]]$e.Value }
+                    default { $e.Value }
+                }
+                New-ItemProperty -LiteralPath $e.Path -Name $e.Name -Value $value -PropertyType $e.Type -Force | Out-Null
             } else {
                 Remove-ItemProperty -LiteralPath $e.Path -Name $e.Name -ErrorAction SilentlyContinue
             }
@@ -324,8 +335,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 }
 
 if ($Restore) {
-    if (-not (Test-Path -LiteralPath $Undo)) { exit 0 }
-    $entries = @(Import-Clixml -LiteralPath $Undo)
+    $entries = @(Read-Undo)
     [array]::Reverse($entries)
     $failed = 0
     foreach ($entry in $entries) {

@@ -3,12 +3,14 @@ package runner
 import (
 	"context"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"checklist/catalog"
 	"checklist/collector"
+	"checklist/policy"
 )
 
 // runFakeCollector runs the patching collector on ubuntu with fn in place of
@@ -66,5 +68,40 @@ func TestCollectorOutput(t *testing.T) {
 	})
 	if r.Status != StatusOK || r.Output != "id 1095" || r.ID != "1095" {
 		t.Errorf("got status %q, id %q, output %q", r.Status, r.ID, r.Output)
+	}
+}
+
+func TestRunRecordsSelection(t *testing.T) {
+	cat, err := catalog.Load(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	collect = func(string, collector.Input) (string, error) { return "", nil }
+	t.Cleanup(func() { collect = collector.Run })
+	only := []string{"collect.patching"}
+	rep, err := Run(context.Background(), cat, Options{
+		Platform: "ubuntu", Only: only, Collectors: true, Timeout: time.Minute,
+		Policy: &policy.Policy{Name: "web", Include: []string{"linux.ssh"}, Exclude: []string{"linux.ssh.root"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	only[0] = "changed by the caller"
+	if !slices.Equal(rep.Only, []string{"collect.patching"}) || !slices.Equal(rep.Policy.Include, []string{"linux.ssh"}) ||
+		!slices.Equal(rep.Policy.Exclude, []string{"linux.ssh.root"}) {
+		t.Fatalf("only = %v, policy = %+v", rep.Only, rep.Policy)
+	}
+
+	if rep.Selects("linux.ssh.ciphers") {
+		t.Error("a control outside --only was selected")
+	}
+	rep.Only = []string{"linux"}
+	for key, want := range map[string]bool{"linux.ssh.ciphers": true, "linux.ssh.root": false, "linux.auth.x": false} {
+		if got := rep.Selects(key); got != want {
+			t.Errorf("with --only linux: Selects(%q) = %v", key, got)
+		}
+	}
+	if !(&Report{}).Selects("linux.auth.x") {
+		t.Error("a report without a selection must select every key")
 	}
 }

@@ -80,3 +80,52 @@ func TestCompareWithoutScore(t *testing.T) {
 		t.Errorf("text:\n%s", b.String())
 	}
 }
+
+func TestCompareAcrossSelections(t *testing.T) {
+	ports := runner.CollectorResult{Key: "collect.listening_ports", Status: "ok", Output: "0.0.0.0:22/TCP"}
+	full := rep(66.7, []runner.CheckResult{
+		{Key: "linux.ssh.root", Status: "pass"}, {Key: "linux.ssh.gone", Status: "pass"}, {Key: "linux.auth.pw", Status: "fail"},
+	}, ports)
+	subset := rep(100, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}, {Key: "linux.ssh.new", Status: "pass"}})
+	subset.Only = []string{"linux.ssh"}
+	collect := rep(0, nil, ports)
+	collect.Summary, collect.Only = runner.Summary{}, []string{"collect."}
+	profile := rep(100, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}, {Key: "linux.ssh.gone", Status: "pass"}})
+	profile.Policy = &runner.PolicyInfo{Name: "web", Exclude: []string{"linux.auth"}, Excluded: 1}
+
+	for _, tc := range []struct {
+		name     string
+		old, cur *runner.Report
+		changed  []string // keys under Changed
+		notRun   int
+		text     string
+	}{
+		// linux.auth.pw was not run; linux.ssh.gone was in scope and is gone, linux.ssh.new is new.
+		{"subset after full", full, subset, []string{"linux.ssh.new", "linux.ssh.gone"}, 1, "1 check not compared"},
+		{"full after subset", subset, full, []string{"linux.ssh.gone", "linux.ssh.new"}, 1, "1 check not compared"},
+		{"collector-only after full", full, collect, nil, 3, "No changes.\n\n3 checks not compared"},
+		{"full after collector-only", collect, full, nil, 3, "3 checks not compared"},
+		{"policy profile after full", full, profile, nil, 1, "No changes."},
+		// A report without a recorded selection ran everything, so a missing check is a change.
+		{"unrecorded selection", subset, rep(100, []runner.CheckResult{{Key: "linux.ssh.root", Status: "pass"}}), []string{"linux.ssh.new"}, 0, "absent"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Compare(tc.old, tc.cur)
+			var changed []string
+			for _, c := range r.Changed {
+				changed = append(changed, c.Key)
+			}
+			if !slices.Equal(changed, tc.changed) || r.NotRun != tc.notRun || len(r.Regressions)+len(r.Fixed)+len(r.Inventory) != 0 {
+				t.Errorf("changed = %v, not run = %d, result %+v", changed, r.NotRun, r)
+			}
+			if r.HasDrift() != (len(tc.changed) > 0) {
+				t.Errorf("drift = %v", r.HasDrift())
+			}
+			var b strings.Builder
+			WriteText(&b, r)
+			if !strings.Contains(b.String(), tc.text) || (tc.notRun == 0) != !strings.Contains(b.String(), "not compared") {
+				t.Errorf("text missing %q:\n%s", tc.text, b.String())
+			}
+		})
+	}
+}

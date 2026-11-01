@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -182,5 +183,82 @@ func TestReportWithoutScore(t *testing.T) {
 	_, body = get(t, ts.URL+"/s/ubuntu_web01", "", "")
 	if strings.Contains(body, "points)") || strings.Contains(body, "<polyline") || !strings.Contains(body, "100.0%") {
 		t.Errorf("subject page:\n%s", body)
+	}
+}
+
+func TestDriftAcrossSelections(t *testing.T) {
+	ts := newTest(t, "")
+	ctx := context.Background()
+	day := time.Date(2026, 10, 17, 8, 0, 0, 0, time.UTC)
+	ssh := runner.CheckResult{Key: "linux.ssh.root", ID: "1075", Title: "Ensure SSH root login is disabled", Status: "pass"}
+	auth := runner.CheckResult{Key: "linux.auth.pw", ID: "1080", Title: "Ensure password expiration is 365 days or less", Status: "fail"}
+	ports := runner.CollectorResult{Key: "collect.listening_ports", Title: "Ports", Status: "ok", Output: "0.0.0.0:22/TCP"}
+	upload := func(host string, at time.Time, only []string, checks []runner.CheckResult, inv ...runner.CollectorResult) {
+		t.Helper()
+		rep := runner.Report{
+			SchemaVersion: runner.SchemaVersion,
+			Platform:      runner.PlatformInfo{Key: "ubuntu", Name: "Ubuntu", Kind: "linux"},
+			Host:          runner.Host{Hostname: host},
+			StartedAt:     at,
+			Checks:        checks,
+			Collectors:    inv,
+			Only:          only,
+		}
+		for _, c := range checks {
+			if c.Status == runner.StatusPass {
+				rep.Summary.Pass++
+			} else {
+				rep.Summary.Fail++
+			}
+		}
+		b, err := json.Marshal(rep)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Upload(ctx, ts.URL, "", b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	full := []runner.CheckResult{ssh, auth}
+	later := day.Add(time.Hour)
+	upload("subset", day, nil, full, ports) // --only linux.ssh after a full run
+	upload("subset", later, []string{"linux.ssh"}, []runner.CheckResult{ssh})
+	upload("full", day, []string{"linux.ssh"}, []runner.CheckResult{ssh}) // a full run after --only linux.ssh
+	upload("full", later, nil, full, ports)
+	upload("inventory", day, nil, full, ports) // --only collect. after a full run
+	upload("inventory", later, []string{"collect."}, nil, ports)
+	upload("removed", day, nil, full, ports) // a full run without a check the previous one had
+	upload("removed", later, nil, []runner.CheckResult{ssh}, ports)
+
+	resp, err := http.Get(ts.URL + "/api/subjects")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var subs []SubjectSummary
+	if err := json.NewDecoder(resp.Body).Decode(&subs); err != nil {
+		t.Fatal(err)
+	}
+	drifted := map[string]bool{}
+	for _, s := range subs {
+		drifted[s.ID] = s.Drift
+	}
+	if want := map[string]bool{"ubuntu_subset": false, "ubuntu_full": false, "ubuntu_inventory": false, "ubuntu_removed": true}; !maps.Equal(drifted, want) {
+		t.Errorf("drift = %v, want %v", drifted, want)
+	}
+	if _, body := get(t, ts.URL+"/", "", ""); strings.Count(body, ">drift</span>") != 1 {
+		t.Errorf("overview should show one drift pill:\n%s", body)
+	}
+
+	for id, want := range map[string]string{
+		"subset":    "· 1 check not compared, run in only one report",
+		"full":      "· 1 check not compared, run in only one report",
+		"inventory": "· 2 checks not compared, run in only one report",
+		"removed":   "(fail → absent)",
+	} {
+		_, body := get(t, ts.URL+"/s/ubuntu_"+id, "", "")
+		if !strings.Contains(body, want) || strings.Contains(body, "Other changes") != (id == "removed") {
+			t.Errorf("%s: subject page missing %q:\n%s", id, want, body)
+		}
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -59,6 +60,7 @@ func Run(ctx context.Context, cat *catalog.Catalog, opts Options) (*Report, erro
 		Platform:      PlatformInfo{Key: opts.Platform, Name: p.Name, Kind: p.Kind},
 		Host:          hostInfo(),
 		StartedAt:     time.Now().UTC(),
+		Only:          slices.Clone(opts.Only),
 	}
 
 	switch {
@@ -81,7 +83,8 @@ func Run(ctx context.Context, cat *catalog.Catalog, opts Options) (*Report, erro
 
 	controls := selectItems(cat.ControlsFor(opts.Platform), opts.Only)
 	if opts.Policy != nil {
-		rep.Policy = &PolicyInfo{Name: opts.Policy.Name, Description: opts.Policy.Description}
+		rep.Policy = &PolicyInfo{Name: opts.Policy.Name, Description: opts.Policy.Description,
+			Include: opts.Policy.Include, Exclude: opts.Policy.Exclude}
 		kept := controls[:0:0]
 		for _, it := range controls {
 			if opts.Policy.Selects(it.Key) {
@@ -135,11 +138,8 @@ func selectItems(items []catalog.Item, prefixes []string) []catalog.Item {
 	}
 	var out []catalog.Item
 	for _, it := range items {
-		for _, pre := range prefixes {
-			if it.Key == pre || strings.HasPrefix(it.Key, strings.TrimSuffix(pre, ".")+".") {
-				out = append(out, it)
-				break
-			}
+		if policy.MatchesAny(it.Key, prefixes) {
+			out = append(out, it)
 		}
 	}
 	return out

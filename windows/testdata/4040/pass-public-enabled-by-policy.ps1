@@ -1,11 +1,8 @@
 # The Public profile is disabled locally, but Group Policy enables it.
-$policy = 'HKLM:\SOFTWARE\Policies\Microsoft\WindowsFirewall'
 Set-FirewallProfile Domain True
 Set-FirewallProfile Private True
 Set-FirewallProfile Public False
-Remove-RegistryValue "$policy\DomainProfile" EnableFirewall
-Remove-RegistryValue "$policy\PrivateProfile" EnableFirewall
-Set-FirewallPolicy Public 1
+Set-FirewallPolicy Public True
 Wait-FirewallProfile Domain $true
 Wait-FirewallProfile Private $true
 Wait-FirewallProfile Public $true

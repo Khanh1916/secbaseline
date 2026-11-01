@@ -203,19 +203,14 @@ function Update-ComputerPolicy {
     if ($LASTEXITCODE -ne 0) { throw "gpupdate failed with exit code $LASTEXITCODE" }
 }
 
-# Set-FirewallPolicy sets the Group Policy EnableFirewall value of a profile
-# (Domain, Private, Public) to 0 or 1, or removes it ($null), and refreshes
-# the computer policy so that the firewall service reads it; restore removes
-# or resets the value and refreshes again.
-function Set-FirewallPolicy([string]$Name, $Enabled) {
-    # Undo runs last first, so this refresh runs after the value is restored.
-    Add-Undo @{ Kind = 'gpupdate' }
-    $path = "HKLM:\SOFTWARE\Policies\Microsoft\WindowsFirewall\$($Name)Profile"
-    if ($null -eq $Enabled) {
-        Remove-RegistryValue $path EnableFirewall
-    } else {
-        Set-RegistryValue $path EnableFirewall $Enabled
-    }
+# Set-FirewallPolicy sets a profile (Domain, Private, Public) in the local
+# Group Policy object to True, False or NotConfigured and refreshes the
+# computer policy, as a domain GPO would be applied. (The firewall service
+# ignores an EnableFirewall value written to the registry by hand.)
+function Set-FirewallPolicy([string]$Name, [string]$Enabled) {
+    $fw = Get-NetFirewallProfile -Name $Name -PolicyStore localhost
+    Add-Undo @{ Kind = 'firewallpolicy'; Name = $Name; Enabled = [string]$fw.Enabled }
+    Set-NetFirewallProfile -Name $Name -PolicyStore localhost -Enabled $Enabled
     Update-ComputerPolicy
 }
 
@@ -223,7 +218,7 @@ function Set-FirewallPolicy([string]$Name, $Enabled) {
 # state, which it does some time after a policy value changes.
 function Wait-FirewallProfile([string]$Name, [bool]$Enabled) {
     $want = if ($Enabled) { 'True' } else { 'False' }
-    for ($i = 0; $i -lt 30; $i++) {
+    for ($i = 0; $i -lt 60; $i++) {
         if ([string](Get-NetFirewallProfile -Name $Name -PolicyStore ActiveStore).Enabled -eq $want) { return }
         Start-Sleep -Seconds 1
     }
@@ -383,7 +378,10 @@ function Restore-Entry([hashtable]$e) {
         'audit' { Write-AuditPolicy $e.Subcategory $e.Success $e.Failure }
         'service' { Set-Service -Name $e.Name -StartupType $e.StartupType }
         'firewall' { Set-NetFirewallProfile -Name $e.Name -PolicyStore PersistentStore -Enabled $e.Enabled }
-        'gpupdate' { Update-ComputerPolicy }
+        'firewallpolicy' {
+            Set-NetFirewallProfile -Name $e.Name -PolicyStore localhost -Enabled $e.Enabled
+            Update-ComputerPolicy
+        }
         'account' {
             $user = Get-BuiltinAccount $e.Rid
             if ($user.Name -ne $e.Name) { Rename-LocalUser -SID $user.SID -NewName $e.Name }

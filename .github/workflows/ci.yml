@@ -100,6 +100,30 @@ jobs:
           (cd checklist && go build -o "$RUNNER_TEMP/checklist.exe" .)
           "$RUNNER_TEMP/checklist.exe" lint
 
+  windows-cases:
+    name: windows (verdict cases)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: checklist/go.mod
+          cache-dependency-path: checklist/go.sum
+
+      # Each case (windows/testdata/<id>/{pass,fail}-*.ps1) changes this
+      # runner's security settings, runs the check and restores the settings;
+      # see windows_cases_test.go. Only this disposable runner sets
+      # CHECKLIST_CASES_WINDOWS.
+      - name: Verdict cases
+        working-directory: checklist
+        shell: bash
+        env:
+          CHECKLIST_CASES_WINDOWS: "1"
+        run: |
+          go test -count=1 -timeout 60m -run TestWindowsCases -v ./runner |
+            grep -Ev '^ *(=== (RUN|PAUSE|CONT)|--- PASS)'
+
   distros:
     name: distro (${{ matrix.platform }})
     runs-on: ubuntu-latest

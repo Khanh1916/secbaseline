@@ -27,7 +27,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
   local security policy exported by `secedit`; without elevation, `4001`, `4003`, `4005` and `4006`
   fall back to `net accounts`, read by field position rather than by its localized labels.
 - Audit checks (`4010`–`4024`) read `auditpol /backup`, which identifies subcategories by GUID and
-  settings by number. A subcategory set to Success and Failure includes Success.
+  settings by number. A subcategory set to Success and Failure includes both. Most require
+  Success; Directory Service Access (`4016`) and Account Lockout (`4018`) require Failure, as the
+  CIS benchmark does: Account Lockout logs only failed logons to a locked account (event 4625),
+  so Success alone records nothing.
 - `4007` reads user rights exported by `secedit` and needs elevation; a right that no account
   holds is not exported at all, which is the compliant state.
 - `4009` and `4053` find the built-in Guest and Administrator accounts by SID (`-501`, `-500`),
@@ -61,9 +64,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File windows\4001.ps1; "exit=$LAS
 | [4013](4013.ps1) | Ensure 'Other Account Management Events' auditing includes Success | `windows.audit.other_account_management_events` |
 | [4014](4014.ps1) | Ensure 'Security Group Management' auditing includes Success | `windows.audit.security_group_management` |
 | [4015](4015.ps1) | Ensure 'Process Creation' auditing includes Success | `windows.audit.process_creation` |
-| [4016](4016.ps1) | Ensure 'Directory Service Access' auditing includes Success | `windows.audit.directory_service_access` |
+| [4016](4016.ps1) | Ensure 'Directory Service Access' auditing includes Failure | `windows.audit.directory_service_access` |
 | [4017](4017.ps1) | Ensure 'Directory Service Changes' auditing includes Success | `windows.audit.directory_service_changes` |
-| [4018](4018.ps1) | Ensure 'Account Lockout' auditing includes Success | `windows.audit.account_lockout` |
+| [4018](4018.ps1) | Ensure 'Account Lockout' auditing includes Failure | `windows.audit.account_lockout` |
 | [4019](4019.ps1) | Ensure 'Logoff' auditing includes Success | `windows.audit.logoff` |
 | [4020](4020.ps1) | Ensure 'Other Logon/Logoff Events' auditing includes Success | `windows.audit.other_logon_logoff_events` |
 | [4021](4021.ps1) | Ensure 'Special Logon' auditing includes Success | `windows.audit.special_logon` |

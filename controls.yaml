@@ -348,13 +348,13 @@ controls:
     title: "Ensure 'Process Creation' auditing includes Success"
     ids: {windows: 4015}
   - key: windows.audit.directory_service_access
-    title: "Ensure 'Directory Service Access' auditing includes Success"
+    title: "Ensure 'Directory Service Access' auditing includes Failure"
     ids: {windows: 4016}
   - key: windows.audit.directory_service_changes
     title: "Ensure 'Directory Service Changes' auditing includes Success"
     ids: {windows: 4017}
   - key: windows.audit.account_lockout
-    title: "Ensure 'Account Lockout' auditing includes Success"
+    title: "Ensure 'Account Lockout' auditing includes Failure"
     ids: {windows: 4018}
   - key: windows.audit.logoff
     title: "Ensure 'Logoff' auditing includes Success"

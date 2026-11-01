@@ -95,8 +95,9 @@ directory as working directory. Output is capped at 1 MiB per stream.
 
 A failing check covered by an active waiver becomes `waived`: excluded from the score, shown with
 its waiver in HTML, a suppressed result in SARIF, `skipped` in JUnit. The report's `policy` object
-records how many controls the profile excluded, expired waivers (their checks fail again) and
-unused waivers (their checks pass). `checklist lint` validates every file in `policies/`.
+records the profile's `include` and `exclude` prefixes, how many controls it excluded, expired
+waivers (their checks fail again) and unused waivers (their checks pass). `checklist lint`
+validates every file in `policies/`.
 
 ## Report format
 
@@ -128,6 +129,10 @@ unused waivers (their checks pass). `checklist lint` validates every file in `po
   no check passed or failed (`pass + fail` is 0, e.g. a collector-only run) the report has no
   score: `score` is 0, and the run summary, HTML report and dashboard show `n/a` instead of 0%.
 - Network reports add `target`: the configuration path, its SHA-256 and the device hostname.
+- A run limited with `--only` records the prefixes in `only`, e.g. `"only": ["collect."]`; a
+  policy run records its profile in `policy.include` and `policy.exclude`. `checklist diff` and
+  the dashboard use them to tell a check that was not run from one that was removed. A report
+  without them ran every control.
 
 ## Export formats
 
@@ -158,8 +163,17 @@ Upload to GitHub code scanning, for example:
 | `--exit-code` | Exit `2` when there are regressions, other status changes or inventory changes |
 
 Checks are matched by key. `pass -> fail` is a regression, `fail -> pass` is a fix, and anything
-involving `error` or a check that exists in only one report is listed under other changes.
-Collector output is compared as a set of lines.
+involving `error` or a check that exists in only one report (added to or removed from the
+catalog) is listed under other changes. Collector output is compared as a set of lines; a
+collector in only one report is not compared.
+
+Reports of different scope compare cleanly: a check missing from a report whose selection
+(`--only`, or the policy's `include`/`exclude`, see [Report format](#report-format)) left it out
+was not run, so it is not a change and does not count for `--exit-code`. A collector-only run
+(`--only collect.`) or a subset after a full run, or a full run after either, shows only real
+changes and ends with a count such as `85 checks not compared: run in only one report`; the
+dashboard shows the same count next to "Changes since the previous report". Reports written
+before the selection was recorded count as full runs, so a check they lack is still listed.
 
 ## `checklist serve`
 

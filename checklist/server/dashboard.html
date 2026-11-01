@@ -97,7 +97,7 @@ footer { margin-top:24px; color:var(--muted); font-size:12px; }
 {{end}}
 
 {{with .Drift}}
-<section class="card"><h2>Changes since the previous report{{if .HasDelta}} <span class="muted">({{delta .ScoreDelta}} points)</span>{{end}}</h2>
+<section class="card"><h2>Changes since the previous report{{if .HasDelta}} <span class="muted">({{delta .ScoreDelta}} points)</span>{{end}}{{if .NotRun}} <span class="muted">· {{.NotRun}} check{{if ne .NotRun 1}}s{{end}} not compared, run in only one report</span>{{end}}</h2>
 <div class="diff">
   {{if not (or .Regressions .Fixed .Changed .Inventory)}}<span class="muted">No changes.</span>{{end}}
   {{if .Regressions}}<h3 class="fail">Regressions ({{len .Regressions}})</h3><ul>{{range .Regressions}}<li>{{.ID}} {{.Title}}{{if .Message}} <span class="muted">— {{.Message}}</span>{{end}}</li>{{end}}</ul>{{end}}

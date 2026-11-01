@@ -87,13 +87,15 @@ func (p *Policy) Selects(key string) bool {
 	if p == nil {
 		return true
 	}
-	if len(p.Include) > 0 && !matchesAny(key, p.Include) {
+	if len(p.Include) > 0 && !MatchesAny(key, p.Include) {
 		return false
 	}
-	return !matchesAny(key, p.Exclude)
+	return !MatchesAny(key, p.Exclude)
 }
 
-func matchesAny(key string, prefixes []string) bool {
+// MatchesAny reports whether key is one of the prefixes or starts with one
+// followed by a dot, so "linux.ssh" matches "linux.ssh.root" but not "linux.sshd.x".
+func MatchesAny(key string, prefixes []string) bool {
 	for _, pre := range prefixes {
 		pre = strings.TrimSuffix(pre, ".")
 		if key == pre || strings.HasPrefix(key, pre+".") {

@@ -205,7 +205,9 @@ func diffCmd() *cobra.Command {
 		Long: `Compare two reports from checklist run. Checks are matched by key; collector
 output is compared line by line, so new SSH keys, accounts, listening ports or
 firewall rules show up as added lines. The reports may come from different
-hosts, e.g. a golden baseline and a production server.`,
+hosts, e.g. a golden baseline and a production server. A check that one report
+left out with --only or its policy profile was not run there, so it is counted
+as not compared instead of listed as a change.`,
 		Example: `  checklist diff baseline.json today.json
   checklist diff --exit-code yesterday.json today.json || alert "drift on web01"`,
 		Args: cobra.ExactArgs(2),

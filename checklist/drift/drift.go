@@ -45,6 +45,9 @@ type Result struct {
 	Fixed       []CheckChange     `json:"fixed"`
 	Changed     []CheckChange     `json:"changed"` // transitions into or out of error, added, removed
 	Inventory   []InventoryChange `json:"inventory"`
+	// NotRun counts checks in only one report because the other report's
+	// selection (--only, policy profile) left them out. They are not changes.
+	NotRun int `json:"not_run"`
 }
 
 // HasDrift reports whether anything got worse or the inventory changed.
@@ -64,7 +67,9 @@ func side(rep *runner.Report) Side {
 }
 
 // Compare matches checks and collectors by key. The two reports may come from
-// different hosts, e.g. a golden baseline and a production server.
+// different hosts, e.g. a golden baseline and a production server. A check in
+// only one report is a change (added to or removed from the catalog) unless the
+// other report did not select it, e.g. a --only run after a full one.
 func Compare(old, cur *runner.Report) *Result {
 	r := &Result{Old: side(old), New: side(cur)}
 	if r.HasDelta() {
@@ -80,6 +85,10 @@ func Compare(old, cur *runner.Report) *Result {
 		seen[c.Key] = true
 		ch := CheckChange{Key: c.Key, ID: c.ID, Title: c.Title, To: c.Status, Message: firstNonEmpty(c.Message, c.Error)}
 		prev, ok := before[c.Key]
+		if !ok && !old.Selects(c.Key) {
+			r.NotRun++
+			continue
+		}
 		if !ok {
 			ch.From = "absent"
 			r.Changed = append(r.Changed, ch)
@@ -97,7 +106,11 @@ func Compare(old, cur *runner.Report) *Result {
 		}
 	}
 	for _, c := range old.Checks {
-		if !seen[c.Key] {
+		switch {
+		case seen[c.Key]:
+		case !cur.Selects(c.Key):
+			r.NotRun++
+		default:
 			r.Changed = append(r.Changed, CheckChange{Key: c.Key, ID: c.ID, Title: c.Title, From: c.Status, To: "absent"})
 		}
 	}
@@ -197,6 +210,16 @@ func WriteText(w io.Writer, r *Result) {
 	if len(r.Regressions)+len(r.Fixed)+len(r.Changed)+len(r.Inventory) == 0 {
 		fmt.Fprintln(w, "\nNo changes.")
 	}
+	if r.NotRun > 0 {
+		fmt.Fprintf(w, "\n%s not compared: run in only one report (--only or policy profile).\n", checks(r.NotRun))
+	}
+}
+
+func checks(n int) string {
+	if n == 1 {
+		return "1 check"
+	}
+	return fmt.Sprintf("%d checks", n)
 }
 
 func scoreText(s Side) string {

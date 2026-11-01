@@ -3,6 +3,8 @@ package runner
 import (
 	"math"
 	"time"
+
+	"checklist/policy"
 )
 
 // SchemaVersion is bumped whenever the JSON report layout changes incompatibly.
@@ -31,6 +33,7 @@ type Report struct {
 	Summary       Summary           `json:"summary"`
 	Checks        []CheckResult     `json:"checks"`
 	Collectors    []CollectorResult `json:"collectors,omitempty"`
+	Only          []string          `json:"only,omitempty"` // --only key prefixes; empty means every key
 	Policy        *PolicyInfo       `json:"policy,omitempty"`
 }
 
@@ -38,6 +41,9 @@ type Report struct {
 type PolicyInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
+	// Include and Exclude are the profile's control key prefixes.
+	Include []string `json:"include,omitempty"`
+	Exclude []string `json:"exclude,omitempty"`
 	// Excluded counts controls left out by the policy's include/exclude lists.
 	Excluded int `json:"excluded"`
 	// ExpiredWaivers no longer apply; their checks count as failures again.
@@ -61,6 +67,17 @@ func (r *Report) Subject() string {
 		return r.Target.DeviceHostname
 	}
 	return r.Host.Hostname
+}
+
+// Selects reports whether the run's selection, its --only prefixes and policy
+// profile, covered a control key. A check missing from a report that did not
+// select it was not run, rather than removed. Reports that record no selection,
+// including those written before it was recorded, cover every key.
+func (r *Report) Selects(key string) bool {
+	if len(r.Only) > 0 && !policy.MatchesAny(key, r.Only) {
+		return false
+	}
+	return r.Policy == nil || (&policy.Policy{Include: r.Policy.Include, Exclude: r.Policy.Exclude}).Selects(key)
 }
 
 type Tool struct {

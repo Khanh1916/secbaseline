@@ -40,7 +40,7 @@ type InventoryChange struct {
 type Result struct {
 	Old         Side              `json:"old"`
 	New         Side              `json:"new"`
-	ScoreDelta  float64           `json:"score_delta"` // 0 unless both sides have a score
+	ScoreDelta  float64           `json:"score_delta"` // 0 unless HasDelta
 	Regressions []CheckChange     `json:"regressions"`
 	Fixed       []CheckChange     `json:"fixed"`
 	Changed     []CheckChange     `json:"changed"` // transitions into or out of error, added, removed
@@ -55,8 +55,19 @@ func (r *Result) HasDrift() bool {
 	return len(r.Regressions)+len(r.Changed)+len(r.Inventory) > 0
 }
 
-// HasDelta reports whether both reports have a score, so ScoreDelta means something.
-func (r *Result) HasDelta() bool { return r.Old.HasScore && r.New.HasScore }
+// HasDelta reports whether ScoreDelta means something: both reports have a
+// score and ran the same checks. A score over a subset (--only, policy profile)
+// does not compare with one over every check.
+func (r *Result) HasDelta() bool { return r.Old.HasScore && r.New.HasScore && r.NotRun == 0 }
+
+// Comparable reports whether the scores of two reports cover the same checks:
+// no check is in only one of them because the other run's selection left it
+// out. Reports of the same scope stay comparable when the catalog changes.
+func Comparable(a, b *runner.Report) bool {
+	var r Result
+	r.compareChecks(a, b)
+	return r.NotRun == 0
+}
 
 // Subject is the device hostname for network reports and the host name otherwise.
 func Subject(rep *runner.Report) string { return rep.Subject() }
@@ -72,10 +83,33 @@ func side(rep *runner.Report) Side {
 // other report did not select it, e.g. a --only run after a full one.
 func Compare(old, cur *runner.Report) *Result {
 	r := &Result{Old: side(old), New: side(cur)}
+	r.compareChecks(old, cur)
 	if r.HasDelta() {
 		r.ScoreDelta = round1(cur.Summary.Score - old.Summary.Score)
 	}
 
+	prevInv := map[string]runner.CollectorResult{}
+	for _, c := range old.Collectors {
+		prevInv[c.Key] = c
+	}
+	for _, c := range cur.Collectors {
+		prev, ok := prevInv[c.Key]
+		if !ok || prev.Status != runner.StatusOK || c.Status != runner.StatusOK {
+			if ok && prev.Status != c.Status {
+				r.Inventory = append(r.Inventory, InventoryChange{Key: c.Key, Title: c.Title, Note: fmt.Sprintf("status %s -> %s", prev.Status, c.Status)})
+			}
+			continue
+		}
+		added, removed := lineDiff(prev.Output, c.Output)
+		if len(added)+len(removed) > 0 {
+			r.Inventory = append(r.Inventory, InventoryChange{Key: c.Key, Title: c.Title, Added: added, Removed: removed})
+		}
+	}
+	return r
+}
+
+// compareChecks fills in the verdict changes and NotRun.
+func (r *Result) compareChecks(old, cur *runner.Report) {
 	before := map[string]runner.CheckResult{}
 	for _, c := range old.Checks {
 		before[c.Key] = c
@@ -114,25 +148,6 @@ func Compare(old, cur *runner.Report) *Result {
 			r.Changed = append(r.Changed, CheckChange{Key: c.Key, ID: c.ID, Title: c.Title, From: c.Status, To: "absent"})
 		}
 	}
-
-	prevInv := map[string]runner.CollectorResult{}
-	for _, c := range old.Collectors {
-		prevInv[c.Key] = c
-	}
-	for _, c := range cur.Collectors {
-		prev, ok := prevInv[c.Key]
-		if !ok || prev.Status != runner.StatusOK || c.Status != runner.StatusOK {
-			if ok && prev.Status != c.Status {
-				r.Inventory = append(r.Inventory, InventoryChange{Key: c.Key, Title: c.Title, Note: fmt.Sprintf("status %s -> %s", prev.Status, c.Status)})
-			}
-			continue
-		}
-		added, removed := lineDiff(prev.Output, c.Output)
-		if len(added)+len(removed) > 0 {
-			r.Inventory = append(r.Inventory, InventoryChange{Key: c.Key, Title: c.Title, Added: added, Removed: removed})
-		}
-	}
-	return r
 }
 
 // lineDiff returns the lines only in b (added) and only in a (removed),
@@ -172,9 +187,12 @@ func lines(s string) []string {
 // WriteText prints a human-readable summary of r.
 func WriteText(w io.Writer, r *Result) {
 	fmt.Fprintf(w, "%s %s (%s)  ->  %s %s (%s)\n", r.Old.Platform, r.Old.Subject, r.Old.StartedAt, r.New.Platform, r.New.Subject, r.New.StartedAt)
-	if r.HasDelta() {
+	switch {
+	case r.HasDelta():
 		fmt.Fprintf(w, "Score: %.1f%% -> %.1f%% (%+.1f)\n", r.Old.Score, r.New.Score, r.ScoreDelta)
-	} else {
+	case r.Old.HasScore && r.New.HasScore:
+		fmt.Fprintf(w, "Score: %.1f%% -> %.1f%% (no change computed: the reports ran different checks)\n", r.Old.Score, r.New.Score)
+	default:
 		fmt.Fprintf(w, "Score: %s -> %s\n", scoreText(r.Old), scoreText(r.New))
 	}
 	section := func(title string, cs []CheckChange) {

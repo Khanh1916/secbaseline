@@ -175,6 +175,13 @@ changes and ends with a count such as `85 checks not compared: run in only one r
 dashboard shows the same count next to "Changes since the previous report". Reports written
 before the selection was recorded count as full runs, so a check they lack is still listed.
 
+The score change (`score_delta`) is computed only when both reports have a score and ran the
+same checks. A subset's score does not compare with a full run's, so between reports of different
+scope `checklist diff` prints both scores with `no change computed`, `has_delta` in
+`/api/subjects` is false, and the dashboard shows `n/a`. Two runs with the same `--only` or
+policy profile still get a change. The dashboard's score trend plots only reports that ran the
+same checks as the latest one and says how many it left out.
+
 ## `checklist serve`
 
 | Flag | Default | Meaning |

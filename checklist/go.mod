@@ -6,7 +6,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/spf13/cobra v1.10.2
 	github.com/thoas/go-funk v0.9.3
-	golang.org/x/sys v0.49.0
+	golang.org/x/sys v0.50.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
